@@ -1,0 +1,8 @@
+.......................................
+----------------------------------------------------------------------
+Ran 39 tests in 0.061s
+
+OK
+DOMAIN SMOKE PASSED: 79 assertions; runtime=21.0.12.1; class target=52 (Java 8)
+JAVA 9 API REJECTED UNDER --release 8: expected failure observed
+OFFLINE ONLY: Maven, real Checkstyle/Spotless, ArchUnit, HTTP tests, JDK 8/11/17/21 runtime matrix and JDK 25 compile-only lane still need full verification.

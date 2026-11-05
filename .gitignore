@@ -1,0 +1,13 @@
+**/target/
+__pycache__/
+*.py[cod]
+.venv/
+.idea/
+*.iml
+.vscode/
+.DS_Store
+.env
+.env.*
+!.env.example
+.toolchains.local.xml
+.lab/

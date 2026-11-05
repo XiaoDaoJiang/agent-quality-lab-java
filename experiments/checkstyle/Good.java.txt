@@ -1,0 +1,10 @@
+package fixtures;
+
+public class Good {
+    public int count(boolean enabled) {
+        if (enabled) {
+            return 1;
+        }
+        return 0;
+    }
+}

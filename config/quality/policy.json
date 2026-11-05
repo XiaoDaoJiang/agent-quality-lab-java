@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "modules": [
+    "domain-core",
+    "app"
+  ],
+  "advisoryRules": [
+    "MethodLength"
+  ],
+  "waivableRules": [
+    "MemberName",
+    "MethodName",
+    "TypeName",
+    "ConstantName",
+    "ParameterName",
+    "LocalVariableName"
+  ],
+  "limits": {
+    "waiverDays": 30,
+    "baselineDays": 90,
+    "activeWaivers": 3,
+    "activeBaseline": 1
+  }
+}

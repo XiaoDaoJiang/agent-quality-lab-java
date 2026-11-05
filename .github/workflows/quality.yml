@@ -1,0 +1,165 @@
+name: Quality
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  policy_scope:
+    runs-on: ubuntu-latest
+    outputs:
+      protected: ${{ steps.scope.outputs.protected }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - id: scope
+        name: Classify policy changes using the trusted base copy
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" != "pull_request" ]; then
+            echo "protected=false" >> "$GITHUB_OUTPUT"
+          elif git cat-file -e "$BASE:tools/policy_guard.py" 2>/dev/null; then
+            git show "$BASE:tools/policy_guard.py" > "$RUNNER_TEMP/trusted-policy-guard.py"
+            python "$RUNNER_TEMP/trusted-policy-guard.py" --base "$BASE"
+          else
+            echo "protected=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  policy_approval:
+    name: Policy review
+    needs: policy_scope
+    if: needs.policy_scope.outputs.protected == 'true'
+    runs-on: ubuntu-latest
+    environment: quality-policy-review
+    steps:
+      - run: echo "Policy change released through the configured human-review environment."
+
+  quality:
+    name: Runtime compatibility (${{ matrix.java }})
+    needs: [policy_scope, policy_approval]
+    if: >-
+      always() && needs.policy_scope.result == 'success' &&
+      (needs.policy_approval.result == 'success' || needs.policy_approval.result == 'skipped')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        java: ['8', '11', '17', '21']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: maven
+      - uses: s4u/setup-maven-action@v1.18.0
+        with:
+          maven-version: 3.9.11
+      - name: Environment
+        run: python tools/lab.py doctor
+      - name: Full quality verification on this runtime
+        run: python tools/lab.py verify
+      - name: Real static-checker and Java 8 API compatibility fixtures
+        run: python tools/lab.py fixtures
+      - name: Executable JAR HTTP smoke on this runtime
+        run: python tools/http_smoke.py --jar app/target/app-0.2.0-SNAPSHOT.jar
+      - name: Preserve raw evidence even when a gate fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-evidence-java-${{ matrix.java }}
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            **/target/checkstyle-result.xml
+            **/target/quality-summary.json
+            **/target/surefire-reports/**
+            **/target/site/jacoco/**
+            target/lab-summary.json
+            target/smoke/**
+            target/fixture-checkstyle/target/checkstyle-result.xml
+            .lab/runs/**
+
+  jdk25_compile:
+    name: JDK 25 compile-only compatibility
+    needs: [policy_scope, policy_approval]
+    if: >-
+      always() && needs.policy_scope.result == 'success' &&
+      (needs.policy_approval.result == 'success' || needs.policy_approval.result == 'skipped')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - uses: s4u/setup-maven-action@v1.18.0
+        with:
+          maven-version: 3.9.11
+      - name: Compile and package Java 8 bytecode on JDK 25
+        run: python tools/lab.py compile
+      - name: Preserve compile evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-evidence-jdk25-compile
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            **/target/checkstyle-result.xml
+            **/target/quality-summary.json
+            target/lab-summary.json
+            .lab/runs/**
+
+  quality_gate:
+    name: quality-gate
+    if: always()
+    needs: [policy_scope, policy_approval, quality, jdk25_compile]
+    runs-on: ubuntu-latest
+    steps:
+      - name: All mandatory jobs must succeed
+        env:
+          SCOPE: ${{ needs.policy_scope.result }}
+          APPROVAL: ${{ needs.policy_approval.result }}
+          RUNTIME_MATRIX: ${{ needs.quality.result }}
+          JDK25_COMPILE: ${{ needs.jdk25_compile.result }}
+        run: |
+          test "$SCOPE" = success
+          test "$APPROVAL" = success || test "$APPROVAL" = skipped
+          test "$RUNTIME_MATRIX" = success
+          test "$JDK25_COMPILE" = success

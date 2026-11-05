@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "entries": [
+    {
+      "id": "BASE-001",
+      "kind": "baseline",
+      "engine": "checkstyle",
+      "file": "domain-core/src/main/java/dev/agentlab/core/compat/LegacyCustomerRow.java",
+      "rule": "MemberName",
+      "line": 5,
+      "sourceSha256": "e1aacb2c57b91a083885a0a6f9c876e6e0c31ccfc2e29342b62503b3785013a1",
+      "owner": "lab-maintainer",
+      "reason": "Demonstrate a frozen public field used by legacy callers; migrate callers before renaming, while keeping the raw finding visible.",
+      "issue": "docs/issues/LEGACY-001.md",
+      "created": "2026-11-05",
+      "expires": "2027-02-03"
+    }
+  ]
+}

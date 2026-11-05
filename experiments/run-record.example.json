@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "status": "NOT_RUN",
+  "taskId": "TASK-001",
+  "baseCommit": "REQUIRED",
+  "agent": {
+    "product": "REQUIRED",
+    "model": "REQUIRED",
+    "harnessVersion": "REQUIRED"
+  },
+  "policyCommit": "REQUIRED",
+  "startedAt": null,
+  "completedAt": null,
+  "firstPass": null,
+  "repairRounds": null,
+  "changedFiles": [],
+  "commandsEvidence": [],
+  "newWarnings": null,
+  "newErrors": null,
+  "unrelatedChangedFiles": [],
+  "humanDecision": null,
+  "notes": "模板，不是已完成实验的证据"
+}

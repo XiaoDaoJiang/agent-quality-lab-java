@@ -1,0 +1,8 @@
+import java.util.List;
+
+public class UsesJava9Api {
+    public static void main(String[] args) {
+        List<String> values = List.of("This must be rejected by --release 8");
+        System.out.println(values);
+    }
+}

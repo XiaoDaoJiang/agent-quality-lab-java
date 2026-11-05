@@ -1,0 +1,13 @@
+# Copy to .github/CODEOWNERS and replace EVERY example team with a real authorized team/user.
+# Merely committing this example does not enable required reviews.
+* @your-org/project-maintainers
+/config/ @your-org/quality-maintainers
+/tools/ @your-org/quality-maintainers
+/.github/ @your-org/quality-maintainers
+/.mvn/ @your-org/quality-maintainers
+**/pom.xml @your-org/quality-maintainers
+/AGENTS.md @your-org/quality-maintainers
+**/src/test/ @your-org/quality-maintainers
+/experiments/ @your-org/quality-maintainers
+/docs/adr/ @your-org/quality-maintainers
+/docs/issues/ @your-org/quality-maintainers

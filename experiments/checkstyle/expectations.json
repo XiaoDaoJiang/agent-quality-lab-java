@@ -1,0 +1,15 @@
+{
+  "Good.java": {},
+  "BadName.java": {
+    "MemberName": "error"
+  },
+  "BadBraces.java": {
+    "NeedBraces": "error"
+  },
+  "BadCatch.java": {
+    "EmptyCatchBlock": "error"
+  },
+  "LongMethod.java": {
+    "MethodLength": "warning"
+  }
+}

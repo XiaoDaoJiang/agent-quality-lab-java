@@ -1,0 +1,11 @@
+package fixtures;
+
+public class BadCatch {
+    public void run() {
+        try {
+            throw new IllegalStateException("fixture");
+        } catch (IllegalStateException ignored) {
+            // Even a comment must not make a swallowed exception disappear.
+        }
+    }
+}

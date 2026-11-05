@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "status": "PARTIALLY_VERIFIED",
+  "recordedAt": "2026-11-05T02:20:15.393647+00:00",
+  "actualEnvironment": {
+    "java": "21.0.12.1",
+    "python": "3.13.5",
+    "maven": "NOT_INSTALLED",
+    "mavenCentral": "DNS_UNAVAILABLE"
+  },
+  "passed": {
+    "pythonTests": 39,
+    "domainSmokeAssertions": 79,
+    "concurrencyRounds": 25,
+    "coreClassFileMajor": 52,
+    "java8ApiNegativeFixture": true,
+    "initialPolicyMetadata": true
+  },
+  "notRun": [
+    "maven-reactor-full-verify",
+    "real-checkstyle",
+    "spotless",
+    "junit",
+    "archunit",
+    "jacoco",
+    "spring-http-smoke",
+    "jdk8-runtime",
+    "jdk11-runtime",
+    "jdk17-runtime",
+    "jdk21-runtime",
+    "jdk25-compile-only",
+    "remote-ci",
+    "server-branch-protection",
+    "agent-evals"
+  ]
+}

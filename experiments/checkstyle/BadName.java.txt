@@ -1,0 +1,9 @@
+package fixtures;
+
+public class BadName {
+    private final String bad_name = "legacy";
+
+    public String value() {
+        return bad_name;
+    }
+}
