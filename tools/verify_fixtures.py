@@ -77,9 +77,10 @@ def main():
         if major == 1:
             major=int(match.group(2) or 0)
         compile_args=[javac,"--release","8"] if major >= 9 else [javac,"-source","1.8","-target","1.8"]
-        compile_result=subprocess.run(compile_args+[str(path)],capture_output=True,text=True)
-        if compile_result.returncode == 0 or "of" not in compile_result.stderr:
-            raise RuntimeError("Java 9 API rejection was not observed; inspect compiler output: "+compile_result.stderr)
+        compile_result=subprocess.run(compile_args+[str(path)],capture_output=True)
+        if compile_result.returncode == 0 or b"of" not in compile_result.stderr:
+            raise RuntimeError("Java 9 API rejection was not observed; inspect compiler output: "
+                               + compile_result.stderr.decode(errors="replace"))
     print("JAVA 8 API NEGATIVE FIXTURE PASSED")
     return 0
 

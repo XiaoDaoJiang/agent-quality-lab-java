@@ -14,6 +14,7 @@ PROTECTED = (
     "AGENTS.md", "agents.md", "pom.xml", "*/pom.xml", "config/*", "tools/*",
     ".github/*", ".mvn/*", "Jenkinsfile", ".gitlab-ci.yml", "mvnw*", ".gitattributes",
     ".editorconfig", "*/src/test/*", "experiments/*", "docs/adr/*", "docs/issues/*",
+    "mise*.toml", "mise*.lock", ".mise*.toml", ".mise*.lock", "mise-tasks/*", ".mise/*",
 )
 
 

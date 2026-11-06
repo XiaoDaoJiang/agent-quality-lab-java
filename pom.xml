@@ -93,11 +93,17 @@
                     <execution>
                         <id>build-environment</id>
                         <phase>validate</phase>
-                        <goals><goal>enforce</goal></goals>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
                         <configuration>
                             <rules>
-                                <requireJavaVersion><version>[1.8,)</version></requireJavaVersion>
-                                <requireMavenVersion><version>[3.6.3,4)</version></requireMavenVersion>
+                                <requireJavaVersion>
+                                    <version>[1.8,)</version>
+                                </requireJavaVersion>
+                                <requireMavenVersion>
+                                    <version>[3.6.3,4)</version>
+                                </requireMavenVersion>
                             </rules>
                         </configuration>
                     </execution>
@@ -131,7 +137,9 @@
                     <execution>
                         <id>collect-raw-checkstyle</id>
                         <phase>validate</phase>
-                        <goals><goal>checkstyle</goal></goals>
+                        <goals>
+                            <goal>checkstyle</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
@@ -144,14 +152,18 @@
                     <execution>
                         <id>enforce-quality-policy</id>
                         <phase>validate</phase>
-                        <goals><goal>exec</goal></goals>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
                         <configuration>
                             <executable>${quality.python}</executable>
                             <arguments>
                                 <argument>${quality.root}/tools/quality_gate.py</argument>
                                 <argument>evaluate</argument>
-                                <argument>--root</argument><argument>${quality.root}</argument>
-                                <argument>--module</argument><argument>${project.basedir}</argument>
+                                <argument>--root</argument>
+                                <argument>${quality.root}</argument>
+                                <argument>--module</argument>
+                                <argument>${project.basedir}</argument>
                             </arguments>
                         </configuration>
                     </execution>
@@ -172,9 +184,11 @@
                         </includes>
                         <eclipse>
                             <version>${eclipse.formatter.version}</version>
-                            <file>${quality.root}/config/formatter/eclipse.xml</file>
+                            <file>${quality.root}/config/formatter/eclipse-codestyle.xml</file>
                         </eclipse>
-                        <importOrder><order>java,javax,org,com,dev,,\#</order></importOrder>
+                        <importOrder>
+                            <order>java,javax,org,com,dev,,\#</order>
+                        </importOrder>
                         <removeUnusedImports/>
                         <trimTrailingWhitespace/>
                         <endWithNewline/>
@@ -184,7 +198,9 @@
                     <execution>
                         <id>format-check</id>
                         <phase>validate</phase>
-                        <goals><goal>check</goal></goals>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
@@ -214,6 +230,9 @@
                     <failIfNoTests>false</failIfNoTests>
                     <useModulePath>false</useModulePath>
                     <argLine>@{argLine}</argLine>
+                    <systemPropertyVariables>
+                        <lab.expectedJava>${java.specification.version}</lab.expectedJava>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
 
@@ -222,8 +241,19 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco.version}</version>
                 <executions>
-                    <execution><id>coverage-agent</id><goals><goal>prepare-agent</goal></goals></execution>
-                    <execution><id>coverage-report</id><phase>verify</phase><goals><goal>report</goal></goals></execution>
+                    <execution>
+                        <id>coverage-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>coverage-report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>
@@ -232,8 +262,14 @@
     <profiles>
         <profile>
             <id>windows</id>
-            <activation><os><family>Windows</family></os></activation>
-            <properties><quality.python>python</quality.python></properties>
+            <activation>
+                <os>
+                    <family>Windows</family>
+                </os>
+            </activation>
+            <properties>
+                <quality.python>python</quality.python>
+            </properties>
         </profile>
     </profiles>
 </project>

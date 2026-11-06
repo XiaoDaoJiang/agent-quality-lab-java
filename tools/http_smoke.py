@@ -7,6 +7,8 @@ import socket
 import subprocess
 import sys
 import time
+from datetime import datetime, timezone
+from toolchain_environment import save_environment
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -31,6 +33,8 @@ def main():
     parser.add_argument("--jar", type=Path, required=True)
     parser.add_argument("--java", default="java")
     args = parser.parse_args()
+    run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ")
+    save_environment(ROOT, run_id, java=args.java, require_build=False, jar=args.jar)
     jar = args.jar.resolve()
     if not jar.is_file():
         raise SystemExit(f"Build the jar first: {jar}")

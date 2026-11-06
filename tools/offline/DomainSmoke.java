@@ -19,8 +19,7 @@ import dev.agentlab.core.domain.TaskStatus;
 public final class DomainSmoke {
     private static int checks;
 
-    private DomainSmoke() {
-    }
+    private DomainSmoke() {}
 
     public static void main(String[] args) throws Exception {
         UUID id = UUID.randomUUID();
@@ -59,7 +58,7 @@ public final class DomainSmoke {
         fails(IllegalStateException.class, () -> repository.insert(created));
         fails(NullPointerException.class, () -> repository.update(created.getId(), old -> null));
         fails(IllegalArgumentException.class,
-                () -> repository.update(created.getId(), old -> Task.create(UUID.randomUUID(), "wrong id")));
+            () -> repository.update(created.getId(), old -> Task.create(UUID.randomUUID(), "wrong id")));
         check(service.get(created.getId()).getStatus() == TaskStatus.DONE, "failed update is atomic");
         check(new LegacyCustomerRow("legacy").customer_name.equals("legacy"), "legacy contract");
         for (int iteration = 0; iteration < 25; iteration++) {
@@ -76,15 +75,14 @@ public final class DomainSmoke {
             }
         }
         System.out.println("DOMAIN SMOKE PASSED: " + checks + " assertions; runtime="
-                + System.getProperty("java.version") + "; class target=52 (Java 8)");
+            + System.getProperty("java.version") + "; class target=52 (Java 8)");
     }
 
     private static void concurrentTerminalTransition() throws Exception {
         InMemoryTaskRepository repository = new InMemoryTaskRepository();
         Task task = Task.create(UUID.randomUUID(), "concurrent");
         repository.insert(task);
-        ThreadPoolExecutor executor = new ThreadPoolExecutor(2, 2, 0, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(2));
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(2, 2, 0, TimeUnit.SECONDS, new LinkedBlockingQueue<>(2));
         try {
             Future<Boolean> one = executor.submit(() -> attempt(() -> repository.update(task.getId(), Task::complete)));
             Future<Boolean> two = executor.submit(() -> attempt(() -> repository.update(task.getId(), Task::cancel)));

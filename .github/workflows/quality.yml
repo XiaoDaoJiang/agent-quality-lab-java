@@ -3,7 +3,7 @@ name: Quality
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [ main ]
   workflow_dispatch:
 
 permissions:
@@ -54,7 +54,7 @@ jobs:
 
   quality:
     name: Runtime compatibility (${{ matrix.java }})
-    needs: [policy_scope, policy_approval]
+    needs: [ policy_scope, policy_approval ]
     if: >-
       always() && needs.policy_scope.result == 'success' &&
       (needs.policy_approval.result == 'success' || needs.policy_approval.result == 'skipped')
@@ -63,7 +63,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: ['8', '11', '17', '21']
+        java: [ '8', '11', '17', '21' ]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -108,7 +108,7 @@ jobs:
 
   jdk25_compile:
     name: JDK 25 compile-only compatibility
-    needs: [policy_scope, policy_approval]
+    needs: [ policy_scope, policy_approval ]
     if: >-
       always() && needs.policy_scope.result == 'success' &&
       (needs.policy_approval.result == 'success' || needs.policy_approval.result == 'skipped')
@@ -146,10 +146,54 @@ jobs:
             target/lab-summary.json
             .lab/runs/**
 
+  mise_entrypoint:
+    name: Portable mise entrypoint (${{ matrix.os }})
+    needs: [ policy_scope, policy_approval ]
+    if: >-
+      always() && needs.policy_scope.result == 'success' &&
+      (needs.policy_approval.result == 'success' || needs.policy_approval.result == 'skipped')
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest ]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3
+        with:
+          version: 2026.11.2
+          install: false
+          env: false
+      - name: Install only locked toolchain artifacts
+        run: mise install --locked
+      - name: Validate task graph
+        run: mise tasks validate
+      - name: Validate shared declarations
+        run: mise exec -- python tools/check_mise.py
+      - name: Build with JDK 17 and smoke the same JAR on Java 8
+        run: mise run check
+      - name: Preserve entrypoint and environment evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mise-evidence-${{ matrix.os }}
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            .lab/runs/**
+            **/target/surefire-reports/**
+            **/target/quality-summary.json
+            target/lab-summary.json
+            target/smoke/**
+
   quality_gate:
     name: quality-gate
     if: always()
-    needs: [policy_scope, policy_approval, quality, jdk25_compile]
+    needs: [ policy_scope, policy_approval, quality, jdk25_compile, mise_entrypoint ]
     runs-on: ubuntu-latest
     steps:
       - name: All mandatory jobs must succeed
@@ -158,8 +202,10 @@ jobs:
           APPROVAL: ${{ needs.policy_approval.result }}
           RUNTIME_MATRIX: ${{ needs.quality.result }}
           JDK25_COMPILE: ${{ needs.jdk25_compile.result }}
+          MISE_ENTRYPOINT: ${{ needs.mise_entrypoint.result }}
         run: |
           test "$SCOPE" = success
           test "$APPROVAL" = success || test "$APPROVAL" = skipped
           test "$RUNTIME_MATRIX" = success
           test "$JDK25_COMPILE" = success
+          test "$MISE_ENTRYPOINT" = success

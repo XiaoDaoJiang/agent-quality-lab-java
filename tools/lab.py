@@ -9,6 +9,8 @@ import shutil
 import subprocess
 import sys
 import time
+import xml.etree.ElementTree as ET
+from toolchain_environment import save_environment
 
 ROOT = Path(__file__).resolve().parents[1]
 RUN_ID = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ")
@@ -27,23 +29,37 @@ def maven_command():
 def run(command):
     print("RUN:", subprocess.list2cmdline([str(x) for x in command]), flush=True)
     start = time.monotonic()
-    completed = subprocess.run(command, cwd=ROOT, check=False)
-    record = {"command": [str(x) for x in command], "exitCode": completed.returncode,
+    interrupted = False
+    try:
+        code = subprocess.run(command, cwd=ROOT, check=False).returncode
+    except KeyboardInterrupt:
+        code, interrupted = 130, True
+    record = {"command": [str(x) for x in command], "exitCode": code,
+              "environment": "environment.json",
               "elapsedSeconds": round(time.monotonic()-start, 3),
               "finishedAt": datetime.now(timezone.utc).isoformat()}
     target = ROOT/".lab/runs"/RUN_ID
     target.mkdir(parents=True, exist_ok=True)
     with (target/"command-evidence.jsonl").open("a", encoding="utf-8") as output:
         output.write(json.dumps(record)+"\n")
-    if completed.returncode:
-        raise subprocess.CalledProcessError(completed.returncode, command)
+    if interrupted:
+        raise KeyboardInterrupt
+    if code:
+        raise subprocess.CalledProcessError(code, command)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("doctor", "selftest", "format", "verify", "fixtures", "compile"))
+    parser.add_argument("command", choices=("doctor", "selftest", "format", "verify", "fixtures", "compile", "start"))
     args = parser.parse_args()
     try:
+        save_environment(ROOT, RUN_ID, require_build=args.command != "start", offline=args.command == "selftest")
+        if args.command == "start":
+            jar = ROOT / "app/target/app-0.2.0-SNAPSHOT.jar"
+            if not jar.is_file():
+                raise RuntimeError("Build the JAR first: " + str(jar))
+            run(["java", "-jar", str(jar), "--server.address=127.0.0.1", "--server.port=8080"])
+            return 0
         if args.command == "doctor":
             print("Python:", sys.version, "\nJAVA_HOME:", os.environ.get("JAVA_HOME", "(unset)"))
             run(["java", "-version"])
@@ -70,7 +86,10 @@ def main():
         modules = ["domain-core", "app"]
         run([sys.executable, "tools/audit_results.py", "--modules"]+modules)
         return 0
-    except (OSError, RuntimeError, subprocess.CalledProcessError) as error:
+    except KeyboardInterrupt:
+        print("LAB STOPPED", file=sys.stderr)
+        return 130
+    except (OSError, RuntimeError, subprocess.CalledProcessError, ET.ParseError) as error:
         print(f"LAB FAILED: {error}", file=sys.stderr)
         return 1
 

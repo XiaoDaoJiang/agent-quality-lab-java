@@ -20,7 +20,7 @@ class QualityGateTest(unittest.TestCase):
         self.module = self.root / "domain-core"
         self.source = self.module / "src/main/java/demo/Legacy.java"
         self.source.parent.mkdir(parents=True)
-        self.source.write_text("package demo;\npublic class Legacy {\n    public String bad_name;\n}\n", encoding="utf-8")
+        self.source.write_bytes(b"package demo;\npublic class Legacy {\n    public String bad_name;\n}\n")
         (self.module / "pom.xml").write_text("<project/>", encoding="utf-8")
         (self.root / "docs/issues").mkdir(parents=True)
         (self.root / "docs/issues/TEST.md").write_text("Reviewed scope example", encoding="utf-8")
@@ -234,13 +234,13 @@ class QualityGateTest(unittest.TestCase):
             evaluate(self.root, self.module)
 
     def test_inline_suppression_fails(self):
-        self.source.write_text("// CHECKSTYLE:OFF\nclass Legacy {}", encoding="utf-8")
-        with self.assertRaises(PolicyError):
+        self.source.write_bytes(b"// CHECKSTYLE:OFF\nclass Legacy {}")
+        with self.assertRaisesRegex(PolicyError, "Inline broad suppression"):
             source_hygiene(self.root, self.module)
 
     def test_crlf_source_fails(self):
         self.source.write_bytes(b"class Legacy {}\r\n")
-        with self.assertRaises(PolicyError):
+        with self.assertRaisesRegex(PolicyError, "Source must use LF"):
             source_hygiene(self.root, self.module)
 
     def test_root_checks_metadata_without_claiming_children_passed(self):
