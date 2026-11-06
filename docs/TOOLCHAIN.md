@@ -1,5 +1,9 @@
 # 工具版本与 Java 8+ 兼容
 
+本文原有表格描述默认工具链。探索分支另提供显式启用的 `modern-toolchain` profile：Spotless 3.11.0、
+Checkstyle 14.4.0、构建 JDK 21+、Maven 3.9.11–3.x；应用和测试仍使用 `release=8`。
+升级范围、测试 JVM 分离与验收记录见 [实验报告](experiments/modern-toolchain-java8.md)。
+
 版本以根 `pom.xml` 为准，禁止使用 LATEST 或动态版本范围。Checkstyle 9.3 官方兼容页确认最低 JRE 8，已确认 JDK 8–17；JDK 25
 可能兼容但需 CI 实测。
 

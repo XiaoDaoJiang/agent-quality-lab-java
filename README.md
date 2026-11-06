@@ -48,6 +48,10 @@ agent-quality-lab/
 mise 需 2026.11.2；默认构建使用 JDK 17，产物保持 Java 8；`mise run check` 在构建通过后使用 Java 8 冒烟同一个 JAR。
 日常入口为 `mise run format`、`mise run check`、`mise run dev`；完整验收入口为 `mise run matrix`，当前会在 JDK 21 如实失败。
 
+探索分支增加了显式启用的 `modern-toolchain` 配置：构建工具运行在 JDK 21+，应用和测试仍为 Java 8。
+入口为 `mise run modern:check`、`mise run modern:compile:25`，设计、复现命令及实测边界见
+[现代工具链与 Java 8 产物实验](docs/experiments/modern-toolchain-java8.md)。原有默认配置与实验结果分别记录。
+
 前置：JDK 8 或以上、Maven 3.6.3–3.x、Python 3.10+，并能访问 Maven Central。mise 入口固定 Maven 3.9.11、Python 3.12.0 和厂商完整 JDK 版本，通过锁文件初始化。
 JDK 25 仅供 compile-only 验收；旧项目也可以直接用 JDK 8 启动原有 Python/Maven 入口。
 

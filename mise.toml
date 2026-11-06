@@ -138,3 +138,21 @@ run = [
   { task = "check:21" },
   { task = "compile:25" },
 ]
+
+[tasks."modern:check"]
+description = "Opt-in upgraded tools on JDK 21; Java 8 bytecode and Java 8 HTTP smoke"
+tools.java = "zulu-21.54.109.0"
+env.LAB_EXPECTED_JAVA = "21"
+env.LAB_EXPECTED_JAVA_VERSION = "21.0.13.0.3"
+run = [
+  "python tools/lab.py verify --profile modern-toolchain",
+  "python tools/lab.py fixtures --profile modern-toolchain",
+  { task = "smoke" },
+]
+
+[tasks."modern:compile:25"]
+description = "Opt-in upgraded tools on JDK 25, compile-only; Java 8 bytecode"
+tools.java = "zulu-25.38.109.0"
+env.LAB_EXPECTED_JAVA = "25"
+env.LAB_EXPECTED_JAVA_VERSION = "25.0.5.0.3"
+run = "python tools/lab.py compile --profile modern-toolchain"

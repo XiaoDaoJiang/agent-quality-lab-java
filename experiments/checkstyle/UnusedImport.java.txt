@@ -1,0 +1,9 @@
+package fixtures;
+
+import java.util.List;
+
+public class UnusedImport {
+    public int value() {
+        return 1;
+    }
+}

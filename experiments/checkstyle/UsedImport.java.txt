@@ -1,0 +1,9 @@
+package fixtures;
+
+import java.util.List;
+
+public class UsedImport {
+    public List<String> values(List<String> source) {
+        return source;
+    }
+}

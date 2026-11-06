@@ -11,5 +11,9 @@
   },
   "LongMethod.java": {
     "MethodLength": "warning"
-  }
+  },
+  "UnusedImport.java": {
+    "UnusedImports": "error"
+  },
+  "UsedImport.java": {}
 }

@@ -10,7 +10,7 @@ import subprocess
 import sys
 import time
 import xml.etree.ElementTree as ET
-from toolchain_environment import save_environment
+from toolchain_environment import save_environment, probe, match, major
 
 ROOT = Path(__file__).resolve().parents[1]
 RUN_ID = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ")
@@ -51,7 +51,11 @@ def run(command):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("doctor", "selftest", "format", "verify", "fixtures", "compile", "start"))
+    parser.add_argument("--profile", choices=("modern-toolchain",))
+    parser.add_argument("--test-java", type=Path, help="Fork verify tests with this Java 8/11/17/21 executable")
     args = parser.parse_args()
+    if args.test_java and args.command != "verify":
+        parser.error("--test-java is only valid for verify")
     try:
         save_environment(ROOT, RUN_ID, require_build=args.command != "start", offline=args.command == "selftest")
         if args.command == "start":
@@ -70,9 +74,19 @@ def main():
             run([sys.executable, "-m", "unittest", "discover", "-s", "tools", "-p", "test_*.py", "-v"])
             return 0
         if args.command == "fixtures":
-            run([sys.executable, "tools/verify_fixtures.py"])
+            run([sys.executable, "tools/verify_fixtures.py"] + (["--profile", args.profile] if args.profile else []))
             return 0
         command = maven_command()+["-B", "-Dquality.python="+sys.executable]
+        if args.profile:
+            command += ["-P" + args.profile]
+        if args.test_java:
+            executable = str(args.test_java.resolve())
+            test_jvm = probe([executable, "-XshowSettings:properties", "-version"])
+            version = major(match(test_jvm["output"], r"java.version = (.+)"))
+            if test_jvm["exitCode"] != 0 or version not in ("8", "11", "17", "21"):
+                raise RuntimeError("Test runtime must be an executable Java 8/11/17/21 JVM")
+            run([executable, "-version"])
+            command += ["-Dlab.test.java=" + executable, "-Dlab.expectedJava=" + version]
         if args.command == "format":
             run(command+["spotless:apply"])
             return 0
