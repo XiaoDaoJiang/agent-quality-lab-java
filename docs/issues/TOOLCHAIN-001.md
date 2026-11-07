@@ -1,6 +1,14 @@
 # TOOLCHAIN-001：Spotless 未使用导入清理器在 JDK 21 失败
 
-状态：已复现、未解决。2026-11-06 用户要求先记录差异，不直接绕过；移除自动清理步骤的候选已撤回。
+状态：旧链问题已复现；当前默认链已通过版本升级修复本机兼容性，IDEA 实操样例通过；独立人审与远程 CI 以 PR 状态为准。
+2026-11-06 用户先要求记录差异、撤回移除清理步骤的候选；随后明确要求提交实验并采用新版默认工具链。
+
+## 当前处理
+
+实验检查点 `daacc5b` 验证 JDK 21 构建、Spotless 3.11.0、Checkstyle 14.4.0，应用与测试保持 Java 8。
+当前已将该组合设为唯一默认，保留 `<removeUnusedImports/>`、规则、阈值和 baseline。
+普通 `check`/`matrix` 不再需要 profile；JDK 21 构建与 Java 8/11/17/21 测试、HTTP 分离。
+实测证据见 DELIVERY-VALIDATION.md 当前章节；下文保留旧版本故障及撤回决定，不能据此认为旧版本已修复。
 
 ## 现象与范围
 
@@ -67,5 +75,5 @@ mvn -B -f .lab/acceptance-20261105/minimal-jdk21/pom.xml spotless:apply
 ## 关闭条件
 
 1. 明确不削减自动清理能力的兼容修复方案，遵循 Java 8 基线和独立人类政策/验收审查。
-2. 在实际工作区完成 JDK 8/11/17/21 完整门禁、fixtures 和 HTTP smoke，并完成 JDK 25 compile-only。
+2. 在实际工作区以 JDK 21 执行全部构建门禁，将全量测试与 HTTP 交给 Java 8/11/17/21，并完成 JDK 25 compile-only。
 3. 补完 IDE 内实际格式化比较，更新真实命令、退出码和报告；历史隔离实验不能替代这些验收。

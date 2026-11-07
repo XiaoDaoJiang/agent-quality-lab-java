@@ -60,6 +60,9 @@ jobs:
       (needs.policy_approval.result == 'success' || needs.policy_approval.result == 'skipped')
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      LAB_EXPECTED_JAVA: '21'
+      LAB_EXPECTED_MAVEN: '3.9.11'
     strategy:
       fail-fast: false
       matrix:
@@ -72,22 +75,29 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - uses: actions/setup-java@v4
+      - id: runtime
+        name: Install the selected test/application runtime
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ matrix.java }}
-          cache: maven
-      - uses: s4u/setup-maven-action@v1.18.0
+      - name: Select JDK 21 and Maven for build tools
+        uses: s4u/setup-maven-action@v1.18.0
         with:
+          checkout-enabled: 'false'
+          java-version: '21'
+          java-distribution: temurin
           maven-version: 3.9.11
       - name: Environment
         run: python tools/lab.py doctor
-      - name: Full quality verification on this runtime
-        run: python tools/lab.py verify
+      - name: Full quality verification with tests forked to this runtime
+        run: python tools/lab.py verify --test-java "${{ steps.runtime.outputs.path }}/bin/java"
       - name: Real static-checker and Java 8 API compatibility fixtures
         run: python tools/lab.py fixtures
       - name: Executable JAR HTTP smoke on this runtime
-        run: python tools/http_smoke.py --jar app/target/app-0.2.0-SNAPSHOT.jar
+        env:
+          LAB_EXPECTED_JAVA: ${{ matrix.java }}
+        run: python tools/http_smoke.py --java "${{ steps.runtime.outputs.path }}/bin/java" --jar app/target/app-0.2.0-SNAPSHOT.jar
       - name: Preserve raw evidence even when a gate fails
         if: always()
         uses: actions/upload-artifact@v4
@@ -114,6 +124,9 @@ jobs:
       (needs.policy_approval.result == 'success' || needs.policy_approval.result == 'skipped')
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      LAB_EXPECTED_JAVA: '25'
+      LAB_EXPECTED_MAVEN: '3.9.11'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -122,13 +135,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - uses: actions/setup-java@v4
+      - name: Select JDK 25 and Maven for compile-only
+        uses: s4u/setup-maven-action@v1.18.0
         with:
-          distribution: temurin
+          checkout-enabled: 'false'
           java-version: '25'
-          cache: maven
-      - uses: s4u/setup-maven-action@v1.18.0
-        with:
+          java-distribution: temurin
           maven-version: 3.9.11
       - name: Compile and package Java 8 bytecode on JDK 25
         run: python tools/lab.py compile
@@ -173,7 +185,7 @@ jobs:
         run: mise tasks validate
       - name: Validate shared declarations
         run: mise exec -- python tools/check_mise.py
-      - name: Build with JDK 17 and smoke the same JAR on Java 8
+      - name: Build with JDK 21 and run Java 8 tests and HTTP smoke
         run: mise run check
       - name: Preserve entrypoint and environment evidence
         if: always()

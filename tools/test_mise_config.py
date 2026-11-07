@@ -6,17 +6,21 @@ from check_mise import validate
 
 class MiseConfigTest(unittest.TestCase):
     def config(self):
-        lane = ["python tools/lab.py doctor", "python tools/lab.py verify", "python tools/lab.py fixtures",
-                "python tools/http_smoke.py --jar app/target/app-0.2.0-SNAPSHOT.jar"]
-        tasks = {"check:" + v: {"run": list(lane)} for v in ("8", "11", "17", "21")}
+        versions = {"8": ("zulu-8.94.0.17", "1.8.0_492"), "11": ("temurin-11.0.24+8", "11.0.24"),
+                    "17": ("temurin-17.0.10+7", "17.0.10"), "21": ("zulu-21.54.109.0", "21.0.13.0.3")}
+        tasks = {"check:" + v: {"run": "python tools/lab.py check --runtime " + v,
+                               "env": {"LAB_RUNTIME_JAVA": tool, "LAB_RUNTIME_JAVA_VERSION": version}}
+                 for v, (tool, version) in versions.items()}
         tasks["matrix"] = {"run": [{"task": "check:" + v} for v in ("8", "11", "17", "21")] + [{"task": "compile:25"}]}
         tasks["verify"] = {"run": "python tools/lab.py verify"}
-        return {"tools": {"python": "3.12.0"}, "tasks": tasks}
+        return {"tools": {"python": "3.12.0", "java": [tool for tool, _ in versions.values()]},
+                "env": {"LAB_EXPECTED_JAVA": "21"}, "tasks": tasks}
 
     def lock(self):
-        return {"tools": {"python": [{"version": "3.12.0", "platforms": {
+        return {"tools": {name: [{"version": version, "platforms": {
             p: {"url": "https://example.org/python.tar.gz", "checksum": "sha256:" + "a" * 64}
-            for p in ("windows-x64", "linux-x64")}}]}}
+            for p in ("windows-x64", "linux-x64")}} for version in (value if isinstance(value, list) else [value])]
+            for name, value in self.config()["tools"].items()}}
 
     def test_complete_declarations_are_accepted(self):
         self.assertEqual([], validate(self.config(), self.lock()))
@@ -39,7 +43,22 @@ class MiseConfigTest(unittest.TestCase):
 
     def test_incomplete_or_reordered_matrix_fails(self):
         config = self.config()
-        config["tasks"]["check:21"]["run"].pop(1)
+        config["tasks"]["check:21"]["run"] = "python tools/lab.py verify"
+        self.assertTrue(validate(config, self.lock()))
+
+    def test_runtime_lane_cannot_replace_the_build_jdk(self):
+        config = self.config()
+        config["tasks"]["check:8"]["tools"] = {"java": "zulu-8.94.0.17"}
+        self.assertTrue(validate(config, self.lock()))
+
+    def test_runtime_lane_cannot_depend_on_an_undeclared_or_floating_tool(self):
+        config = self.config()
+        config["tasks"]["check:8"]["env"]["LAB_RUNTIME_JAVA"] = "latest"
+        self.assertTrue(validate(config, self.lock()))
+
+    def test_default_build_expectation_cannot_fall_back_to_java17(self):
+        config = self.config()
+        config["env"]["LAB_EXPECTED_JAVA"] = "17"
         self.assertTrue(validate(config, self.lock()))
         config = self.config()
         config["tasks"]["matrix"]["run"].reverse()

@@ -12,21 +12,18 @@ import xml.etree.ElementTree as ET
 from lab import ROOT, maven_command
 
 
-def checker_version(pom, profile=None):
+def checker_version(pom):
     namespace = {"m": "http://maven.apache.org/POM/4.0.0"}
     parent = ET.parse(pom)
-    prefix = f"m:profiles/m:profile[m:id='{profile}']/" if profile else ""
-    value = parent.find(prefix + "m:properties/m:checkstyle.version", namespace)
+    value = parent.find("m:properties/m:checkstyle.version", namespace)
     if value is None or not value.text:
-        raise RuntimeError("Missing explicit Checkstyle version for profile: " + str(profile))
+        raise RuntimeError("Missing explicit Checkstyle version")
     return value.text
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--profile", choices=("modern-toolchain",))
-    args = parser.parse_args()
-    version = checker_version(ROOT / "pom.xml", args.profile)
+    argparse.ArgumentParser(description=__doc__).parse_args()
+    version = checker_version(ROOT / "pom.xml")
     work = ROOT / "target/fixture-checkstyle"
     if work.exists():
         shutil.rmtree(work)
@@ -72,7 +69,7 @@ def main():
             raise RuntimeError(f"Fixture {name}: expected {wanted}, got {actual.get(name)}")
     if set(actual) != set(expectations):
         raise RuntimeError("Fixture report source coverage mismatch")
-    print(f"REAL CHECKSTYLE FIXTURES PASSED: {len(expectations)}; engine={version}; profile={args.profile}")
+    print(f"REAL CHECKSTYLE FIXTURES PASSED: {len(expectations)}; engine={version}")
     # --release must reject APIs that were introduced after Java 8.
     with tempfile.TemporaryDirectory(prefix="agentlab-release8-") as folder:
         path=Path(folder)/"UsesJava9Api.java"

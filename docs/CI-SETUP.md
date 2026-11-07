@@ -16,13 +16,15 @@
 
 ## 验证矩阵
 
-- JDK 8 / 11 / 17 / 21：完整 `verify`、真实 Checkstyle 正反例、Java 8 API 负例、HTTP JAR smoke。
+- 构建宿主固定 JDK 21；运行时矩阵为 Java 8 / 11 / 17 / 21。
+- 每个通道完整 `verify --test-java <runtime>/bin/java`、真实 Checkstyle 正反例、Java 8 API 负例，以及指定 JVM 的 HTTP JAR smoke。
 - JDK 25：`compile`，即 Maven validate、Spotless、Checkstyle、Java 8 编译、package 和字节码审计；不运行 Boot 2.7.18 应用。
 - 无 `continue-on-error`。缺产物、缺测试、测试跳过、警告之外的违规，都不能获得总门禁成功。
 
 ## Jenkins / 自托管 GitLab
 
-Jenkinsfile.example 展示一个 Java 8 worker 的 POSIX 示例。生产中建议为 JDK 8/11/17/21 建完整运行矩阵，并为 JDK 25 单独建立
+Jenkinsfile.example 展示 JDK 21 构建、Java 8 测试/HTTP 的 POSIX 示例，需配置 `LAB_RUNTIME_JAVA_HOME`。
+为 Java 8/11/17/21 建完整运行矩阵，并为 JDK 25 单独建立
 compile-only job。Jenkins 构建失败本身不等于 GitLab MR 禁止合并：需要把 Job 状态接入 MR 必需检查、保护目标分支并限制 Bot
 权限。
 

@@ -26,7 +26,8 @@ def probe(command):
                                 text=True, errors="replace", timeout=30, check=False)
     except (OSError, subprocess.TimeoutExpired):
         return {"path": str(Path(executable).resolve()), "output": "", "exitCode": None}
-    return {"path": str(Path(executable).resolve()), "output": re.sub(r"\x1b\[[0-9;]*m", "", result.stdout + result.stderr),
+    return {"path": str(Path(executable).resolve()), "stdout": re.sub(r"\x1b\[[0-9;]*m", "", result.stdout),
+            "output": re.sub(r"\x1b\[[0-9;]*m", "", result.stdout + result.stderr),
             "exitCode": result.returncode}
 
 
@@ -47,12 +48,12 @@ def collect_environment(root, java="java", jar=None):
     mise = probe(["mise", "--version"])
     java_version = match(jre["output"], r"java.version = (.+)")
     javac_version = match(compiler["output"], r"javac ([^\s]+)")
-    variables = {name: os.environ.get(name) for name in ("JAVA_HOME", "MAVEN_HOME", "M2_HOME", "PYTHONUTF8")}
+    variables = {name: os.environ.get(name) for name in ("JAVA_HOME", "MAVEN_HOME", "M2_HOME", "PYTHONUTF8", "LAB_MAVEN_SETTINGS")}
     # JVM options can contain credentials; their presence is useful, their values are not logged.
-    for name in ("MAVEN_OPTS", "JAVA_TOOL_OPTIONS", "JDK_JAVA_OPTIONS"):
+    for name in ("MAVEN_ARGS", "MAVEN_OPTS", "JAVA_TOOL_OPTIONS", "JDK_JAVA_OPTIONS"):
         variables[name] = "[set; contents withheld]" if os.environ.get(name) else None
     configs = {}
-    for name in ("mise.toml", "mise.lock", "mise.local.toml", "pom.xml"):
+    for name in ("mise.toml", "mise.lock", "mise.local.toml", "pom.xml", "config/maven/settings.xml"):
         path = root / name
         if path.is_file():
             configs[name] = hashlib.sha256(path.read_bytes()).hexdigest()
@@ -81,6 +82,8 @@ def collect_environment(root, java="java", jar=None):
 
 def validate_environment(data, expected, require_build=True):
     errors = []
+    if require_build and (not data["java"]["major"] or int(data["java"]["major"]) < 21):
+        errors.append("Build tools require JDK 21+; application/test target remains Java 8")
     if data.get("compileRelease") != "8":
         errors.append("Compile release must remain 8")
     for tool in (("java", "javac", "maven") if require_build else ("java",)):

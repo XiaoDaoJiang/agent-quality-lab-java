@@ -10,14 +10,19 @@ from toolchain_environment import collect_environment, validate_environment, sav
 
 class ToolchainEnvironmentTest(unittest.TestCase):
     def environment(self):
-        return {"compileRelease": "8", "java": {"version": "17.0.10", "major": "17", "home": "/jdk"},
-                "javac": {"version": "17.0.10", "major": "17"},
-                "maven": {"version": "3.9.11", "javaMajor": "17"},
+        return {"compileRelease": "8", "java": {"version": "21.0.11", "major": "21", "home": "/jdk"},
+                "javac": {"version": "21.0.11", "major": "21"},
+                "maven": {"version": "3.9.11", "javaMajor": "21"},
                 "python": {"version": "3.12.0"}, "variables": {"JAVA_HOME": "/jdk"}}
 
     def test_wrong_runtime_is_rejected(self):
         data = self.environment()
         self.assertIn("Java", " ".join(validate_environment(data, {"LAB_EXPECTED_JAVA": "8"})))
+
+    def test_older_build_jdk_cannot_pass_without_explicit_expectations(self):
+        data = self.environment()
+        data["java"].update(version="17.0.10", major="17")
+        self.assertIn("Build tools require JDK 21+", "; ".join(validate_environment(data, {})))
 
     def test_explicit_smoke_java_can_differ_from_build_environment(self):
         data = self.environment()
@@ -33,14 +38,14 @@ class ToolchainEnvironmentTest(unittest.TestCase):
     def test_wrong_java_home_and_compiler_are_rejected(self):
         data = self.environment()
         data["variables"]["JAVA_HOME"] = "/other-jdk"
-        data["javac"]["major"] = "21"
+        data["javac"]["major"] = "25"
         errors = " ".join(validate_environment(data, {}))
         self.assertIn("JAVA_HOME", errors)
         self.assertIn("javac", errors)
 
     def test_expected_versions_match(self):
         self.assertEqual([], validate_environment(self.environment(), {
-            "LAB_EXPECTED_JAVA": "17", "LAB_EXPECTED_JAVA_VERSION": "17.0.10",
+            "LAB_EXPECTED_JAVA": "21", "LAB_EXPECTED_JAVA_VERSION": "21.0.11",
             "LAB_EXPECTED_MAVEN": "3.9.11", "LAB_EXPECTED_PYTHON": "3.12.0"}))
 
     def test_release_change_and_failed_tool_cannot_pass(self):

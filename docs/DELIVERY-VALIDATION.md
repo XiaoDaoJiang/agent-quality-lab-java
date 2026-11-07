@@ -1,8 +1,48 @@
-# 工具链首次验收与验证边界
+# 工具链验收与验证边界
+
+## 当前：新版默认工具链
+
+用户于 2026-11-06 要求先提交实验，再将新版作为默认。实验已提交为 `daacc5b`；默认切换不使用版本 profile。
+当前 Maven 宿主为 JDK 21，Spotless 3.11.0、Checkstyle 14.4.0；源码/API/生产与测试字节码继续 Java 8（major 52）。
+
+| 本机命令 | 结果 | 原始证据 |
+|---|---|---|
+| `mise run check` | 0；项目 settings，无 MAVEN_ARGS 覆盖；JDK 21 构建、Java 8 全量测试、fixtures 与 HTTP | `.lab/normal-toolchain-20261106/check-project-settings.log` |
+| `mise run matrix` | 0；同样使用项目 settings；8/11/17/21 四个测试/HTTP 通道及 JDK 25 compile-only 通过 | 同目录 `matrix-project-settings.log`、`matrix-project-settings-result.json` |
+| `mise run format`、`mise run verify` | 均为 0；默认测试 JVM 为 JDK 21 | 同目录 `format.log`、`verify-default.log` |
+| `mise run start` | Java 8 启动成功，HTTP 探测返回预期 404；测试结束后终止进程树，父进程退出 1、清理退出 0 | 同目录 `start.log`、`start-result.json` |
+
+各 Java 测试通道执行 33 项 Java 测试，未跳过、未失败；Checkstyle 7 个正反例和 Java 8 API 反例通过。
+最终 Python 治理回归为 66 项，通过；包括错误宿主、错配运行时、无效 settings、隐式 Java 25 测试和失败后不得继续 HTTP 的负例。
+每个运行时的报告、实际 JVM 与 JAR SHA-256 由 `check` 自动保存到 `.lab/runs/<run-id>/`，不借用旧 JAR 或下一通道的报告。
+CI 已调整为 JDK 21 构建加独立测试 JVM；本表仅记录本机证据，远程 CI 和独立人审以对应 PR 状态为准，尚无本机以外的 Linux/macOS 验证证据。
+本机系统 mise 未覆盖，实际使用经校验的隔离版本 2026.11.2。手工 Ctrl+C、完整无缓存机器初始化未验证。
+Python 入口显式使用版本控制内的 Maven Central settings；不需要实验目录的 settings，不改用户全局配置。
+历史失败与例外原样保留；当前 BASE-001 scoped warning 没有扩大。
+
+## 2026-11-07 格式化补验与后续决策
+
+JDK 21.0.11 和 25.0.4.1 分别对同一组 26 个隔离文件执行当前 POM 继承的 Spotless 3.11.0 + Eclipse JDT 4.12.0。
+包括 23 个当前源码/测试文件、1 个未格式化的中文/泛型/lambda 样例、2 个导入正反例。两次退出均为 0、未使用缓存跳过；
+26 个输出逐字节一致。未格式化样例确实被改写，无用导入删除、有效导入保留；仓库 Java 源码未改变。
+命令、日志、输出哈希及空 Diff 保存在 `.lab/formatter-acceptance-20261107/`。
+
+IDEA 项目窗口可定位，当前项目设置文件已指向 `config/formatter/eclipse-codestyle.xml` 的 `P3C-CodeStyle`。
+Computer Use 两次画面捕获分别返回 `FrameArrived timed out: timed out waiting on channel` 和
+`window capture timed out: timed out waiting on channel`，因此转为手动补验。
+
+用户在 IDEA 中手动格式化并保存 `idea-probe/FormatterProbe.java`。与同目录下
+`jdk21/probe/src/main/java/fixtures/FormatterProbe.java` 比较：两份输出逐字节一致，均为 498 字节、LF，
+SHA-256 为 `5df8c6f2817f6694b566ada014d289830889dc451a71252b79a7be9fd5f1a51e`；未格式化输入为 395 字节。
+实操结论仅覆盖这个样例；比较记录保存在 `.lab/formatter-acceptance-20261107/idea-result.json`。
+
+本机阶段通过。正式交付需要由独立审查者走 `quality-policy-review`，并在 PR 中取得该提交对应的 `quality-gate` 成功证据后再评估合并。
+
+## 历史：首次旧工具链验收
 
 验收时间：2026-11-05 至 2026-11-06（Asia/Shanghai）。命令记录使用 UTC 时间。
 
-**当前工作区验收未全部通过：JDK 21 被 Spotless `removeUnusedImports` 的兼容性错误阻断。**
+**旧工具链首次验收未全部通过：JDK 21 被 Spotless `removeUnusedImports` 的兼容性错误阻断。**
 JDK 8、11、17 的完整验收和 JDK 25 compile-only 已通过。
 2026-11-06 用户决定先记录兼容性差异，不通过移除自动清理步骤绕过；该候选已撤回，当前门禁和失败状态保留。
 

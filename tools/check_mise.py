@@ -30,10 +30,17 @@ def validate(config, lock):
                 errors.append("Missing locked HTTPS URL/checksum: " + name + "@" + version + " " + platform)
     for name in ("check:8", "check:11", "check:17", "check:21"):
         task = config["tasks"][name]
-        if task["run"] != ["python tools/lab.py doctor", "python tools/lab.py verify",
-                           "python tools/lab.py fixtures",
-                           "python tools/http_smoke.py --jar app/target/app-0.2.0-SNAPSHOT.jar"]:
-            errors.append("Incomplete or reordered runtime lane: " + name)
+        if task["run"] != "python tools/lab.py check --runtime " + name.split(":")[1]:
+            errors.append("Runtime lane must execute the complete check entrypoint: " + name)
+        if task.get("tools", {}).get("java"):
+            errors.append("Runtime lane must inherit the build JDK: " + name)
+        runtime_env = task.get("env", {})
+        if ("java", runtime_env.get("LAB_RUNTIME_JAVA")) not in requested or not runtime_env.get("LAB_RUNTIME_JAVA_VERSION"):
+            errors.append("Runtime lane needs a declared locked Java version and expected patch: " + name)
+    if config.get("env", {}).get("LAB_EXPECTED_JAVA") != "21":
+        errors.append("The default build JVM must be JDK 21")
+    if any(name.startswith("modern:") for name in config["tasks"]):
+        errors.append("The default toolchain must not require modern task aliases")
     if config["tasks"].get("verify", {}).get("run") != "python tools/lab.py verify":
         errors.append("verify must execute the real quality gate")
     if config["tasks"]["matrix"]["run"] != [

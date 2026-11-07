@@ -18,21 +18,21 @@
 
 ## 唯一 Java 兼容基线：Java 8+
 
-**本项目只有一个 Spring Boot 应用和一个 Java 8 基线。禁止恢复 app-modern / app-legacy 双应用结构，禁止把最低 Java 版本提高到
-17。**
+**本项目只有一个 Spring Boot 应用和一个 Java 8 应用基线。禁止恢复 app-modern / app-legacy 双应用结构，禁止提高应用最低 Java 版本。**
 
 - 所有生产代码和测试代码均使用 Java 8 语法、JDK API 和字节码。
 - 根 POM 的 `maven.compiler.release=8` 是唯一编译目标；所有模块必须遵循。
-- JDK 8、11、17、21 执行完整测试与 HTTP smoke。
+- Maven、编译器、格式化器和静态检查器使用 JDK 21+；默认构建宿主为 JDK 21。
+- Java 8、11、17、21 分别作为 Surefire 测试 JVM 和 HTTP 应用运行时；构建 JVM 不随运行时通道降低。
 - JDK 25 只执行 compile/package 与 Java 8 字节码审计；Spring Boot 2.7.18 官方兼容范围到 JDK 21，不得声称官方支持 JDK 25
   运行时。
 - Spring Boot 2.7.18 已结束开源维护，只用于 Java 8 兼容实验，不作为新生产系统推荐版本。
-- Maven 3.6.3–3.x；推荐 Maven 3.9.11。禁止 Maven 4（它提高了运行时 JDK 基线）。
+- Maven 3.9.11–3.x；默认 Maven 3.9.11。禁止 Maven 4。
 - Python >=3.10 仅用于仓库治理工具，不进入应用运行时。
 
-固定 Java 工具链：Spring Boot 2.7.18、Maven Compiler 3.13.0、Spotless Maven 2.30.0、Eclipse JDT 4.12.0、Maven Checkstyle
-Plugin 3.6.0、Checkstyle 9.3、ArchUnit 1.3.0、JaCoCo 0.8.14、Surefire 3.2.5、Enforcer 3.5.0、Exec Maven Plugin
-3.5.1。升级前必须核实每项插件/引擎自身运行时最低 JDK，而不只是应用字节码目标。
+固定工具链：Spring Boot 2.7.18、Maven Compiler 3.13.0、Spotless Maven 3.11.0、Eclipse JDT 4.12.0、Maven Checkstyle
+Plugin 3.6.0、Checkstyle 14.4.0、ArchUnit 1.3.0、JaCoCo 0.8.14、Surefire 3.2.5、Enforcer 3.5.0、Exec Maven Plugin
+3.5.1。升级前核实插件/引擎的构建运行时要求，并独立验证 Java 8 产物；不要求构建工具在 Java 8 启动。
 
 ## 架构约束
 
@@ -52,6 +52,7 @@ python tools/lab.py selftest
 python tools/lab.py format
 python tools/lab.py verify
 python tools/lab.py fixtures
+python tools/lab.py check --runtime 8
 ```
 
 JDK 25 编译专用通道：
@@ -60,7 +61,9 @@ JDK 25 编译专用通道：
 python tools/lab.py compile
 ```
 
-完整验证必须在 Java 8、11、17、21 分别运行 `verify`、`fixtures` 和 HTTP smoke。JDK 25 的 `compile` 不等于运行时验证。
+完整验证使用 `mise run matrix`。各 `check:8/11/17/21` 在 JDK 21 构建、执行全部 fixtures，
+将所有 Java 测试和 HTTP smoke 交给指定运行时。`LAB_RUNTIME_JAVA_HOME` 是本机运行时覆盖；缺失、版本错配或 verify 失败必须停止。
+JDK 25 的 `compile` 不等于运行时验证。禁止恢复版本选择 profile 或通过降低构建 JDK 绕开新版检查器。
 
 ## 工作流程与纠错
 

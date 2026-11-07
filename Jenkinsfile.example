@@ -1,27 +1,18 @@
-// Example POSIX Jenkins worker. Configure JDK 8, Maven 3.9.11 and Python 3.10+.
-// Run the full verify lane on JDK 8; add JDK 11/17/21 runtime matrix jobs as available.
+// Example POSIX worker: JDK 21 build host, Maven 3.9.11 and Python 3.10+.
+// Set LAB_RUNTIME_JAVA_HOME to an installed Java 8 home; add 11/17/21 runtime jobs similarly.
 // JDK 25 is compile-only because Spring Boot 2.7.18 does not officially claim runtime support beyond JDK 21.
 pipeline {
     agent any
     options { timeout(time: 30, unit: 'MINUTES') }
     stages {
-        stage('Environment') {
-            steps { sh 'python3 tools/lab.py doctor' }
-        }
-        stage('Quality') {
-            steps { sh 'python3 tools/lab.py verify' }
-        }
-        stage('Rule regression') {
-            steps { sh 'python3 tools/lab.py fixtures' }
-        }
-        stage('HTTP smoke') {
-            steps { sh 'python3 tools/http_smoke.py --jar app/target/app-0.2.0-SNAPSHOT.jar' }
+        stage('Build on JDK 21; test and smoke on Java 8') {
+            steps { sh 'python3 tools/lab.py check --runtime 8' }
         }
     }
     post {
         always {
             junit testResults: '**/target/surefire-reports/TEST-*.xml', allowEmptyResults: true
-            archiveArtifacts artifacts: '**/target/quality-summary.json,**/target/checkstyle-result.xml,target/smoke/**', allowEmptyArchive: true
+            archiveArtifacts artifacts: '.lab/runs/**,**/target/quality-summary.json,**/target/checkstyle-result.xml,target/smoke/**', allowEmptyArchive: true
         }
     }
 }

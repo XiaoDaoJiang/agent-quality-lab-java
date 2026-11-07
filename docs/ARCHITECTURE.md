@@ -8,6 +8,9 @@ Spring Boot 2.7.18 应用；没有 modern/legacy 双应用，也不将 Java 17 �
 Spring Boot 2.7.18 官方兼容 Java 8–21，已结束开源维护。JDK 25 作为额外编译宿主执行 compile/package 和字节码审计，不在 JDK
 25 启动该应用；不宣称 Boot 2.7.18 官方支持 Java 25 运行时。
 
+构建与运行时分离：默认 JDK 21 启动 Maven、编译器及检查器，`--release 8` 限制生产和测试代码的 API 与字节码。
+Surefire 使用显式 JVM 路径分别运行于 Java 8/11/17/21，HTTP 冒烟使用同一通道的 JVM；没有不同版本的业务应用。
+
 ## 模块边界
 
 `web → application → ports ← adapter`。领域对象仅依赖 JDK；`domain-core` 不依赖 Spring。`app` 负责 Spring
@@ -32,9 +35,10 @@ catch 不可豁免。
 
 ## 工具链信任边界
 
-工具版本按 Java 8+ Maven 运行时选取：Spotless Maven 2.30.0、Eclipse JDT 4.12.0、Checkstyle 9.3、Maven Checkstyle Plugin
-3.6.0、Compiler Plugin 3.13.0、Surefire 3.2.5、Enforcer 3.5.0、ArchUnit 1.3.0、JaCoCo 0.8.14。每次升级都要在 JDK 8 和 JDK 25
-运行对应门禁，不能只看生成字节码目标。
+默认构建宿主为 JDK 21：Spotless Maven 3.11.0、Eclipse JDT 4.12.0、Checkstyle 14.4.0、Maven Checkstyle Plugin
+3.6.0、Compiler Plugin 3.13.0、Surefire 3.2.5、Enforcer 3.5.0、ArchUnit 1.3.0、JaCoCo 0.8.14。
+升级后在 JDK 21 执行全部门禁，在 Java 8/11/17/21 执行全部测试和 HTTP，并额外验证 JDK 25 compile-only。
+构建工具自身的 JDK 下限与应用最低运行时分别验收，不能只看生成字节码目标。
 
 ## 真实安全边界
 

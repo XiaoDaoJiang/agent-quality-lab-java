@@ -3,8 +3,8 @@
 一个渐进式 Java / Spring Boot / Maven Agent 质量试验田。**全项目唯一最低 Java 基线为 Java 8**；不是 Java 17+ 项目，也不拆分
 modern/legacy 两套应用。
 
-> 交付状态：本机 JDK 8/11/17 完整验收及 JDK 25 compile-only 已通过；当前工作区 JDK 21 被 Spotless 未使用导入清理器的兼容性错误阻断。
-> 该差异保持未解决，不采用移除清理步骤的候选方案；IDEA 内实际比较仍为 NOT_RUN。详见 `docs/DELIVERY-VALIDATION.md`。
+> 当前默认链路：JDK 21 构建、Spotless 3.11.0、Checkstyle 14.4.0；应用与测试保持 Java 8。
+> Java 8/11/17/21 是测试和 HTTP 运行时，JDK 25 仅为额外编译宿主。实际结果与未验证项见 `docs/DELIVERY-VALIDATION.md`。
 
 ## 1. Java 8 基线与 JDK 25
 
@@ -12,8 +12,8 @@ modern/legacy 两套应用。
 |-------------|----------------------|-----------------------------------------------------------|
 | Spring Boot | 2.7.18               | Java 8 起，官方兼容至 Java 21；已结束开源维护，仅作试验/迁移样例                  |
 | Java 源码/API | Java 8               | 生产和测试代码统一 `release=8`，class major version 不得超过 52         |
-| Maven       | 3.6.3–3.x            | Maven 自身可运行于 Java 8+；推荐 Maven 3.9.11                      |
-| 开发 JDK      | 25 可选                | JDK 25 用于编译/打包 Java 8 字节码，不代表 Boot 2.7.18 官方支持在 JDK 25 运行 |
+| Maven       | 3.9.11–3.x            | 本项目固定 Maven 3.9.11，构建宿主使用 JDK 21+                      |
+| 构建 JDK      | 21 默认、25 编译可选                | JDK 25 用于编译/打包 Java 8 字节码，不代表 Boot 2.7.18 官方支持在 JDK 25 运行 |
 | 完整运行验证      | JDK 8 / 11 / 17 / 21 | CI 对四个运行时执行全量测试与 HTTP smoke                               |
 | JDK 25 验证   | compile-only         | 格式、静态规则、编译、打包和 Java 8 字节码审计，不启动应用                         |
 | Python      | 3.10+                | 仅用于质量策略与实验脚本，不进入 Java 应用运行时                               |
@@ -21,8 +21,8 @@ modern/legacy 两套应用。
 Spring Boot 3.x/4.x 的最低 Java 版本是 17，不符合本项目目标。Boot 2.7.18 是 Java 8 兼容的最后一代 Boot
 2.x，但已结束开源维护；真实旧系统迁移时必须另行评估商业支持、依赖安全和升级路线，不能把 Demo 版本直接照搬到生产。
 
-**JDK 25 是额外的构建宿主，不是应用最低版本。** Maven Compiler Plugin 3.13.0 在 JDK 9+ 使用 `--release 8`，在 JDK 8 上回退到
-`source/target 1.8`，同一项目可以由 JDK 8、11、17、21、25 编译。
+**构建 JDK 与应用最低版本分离。** 默认 JDK 21 启动 Maven、格式化器、检查器及编译器；Compiler 3.13.0 使用
+`--release 8`。Surefire 通过显式 JVM 路径在 Java 8/11/17/21 执行全部测试；JDK 25 仅编译和审计。
 
 ## 2. 项目结构
 
@@ -45,22 +45,20 @@ agent-quality-lab/
 ## 3. 首次运行
 
 已初始化项目级 mise 任务入口，可复现安装、可选本地覆盖及完整任务说明见 [docs/MISE.md](docs/MISE.md)。
-mise 需 2026.11.2；默认构建使用 JDK 17，产物保持 Java 8；`mise run check` 在构建通过后使用 Java 8 冒烟同一个 JAR。
-日常入口为 `mise run format`、`mise run check`、`mise run dev`；完整验收入口为 `mise run matrix`，当前会在 JDK 21 如实失败。
+mise 需 2026.11.2；默认构建使用 JDK 21，产物保持 Java 8。
+`mise run check` 执行配置检查及 Java 8 全量测试、fixtures 和 HTTP；`mise run matrix` 覆盖四个运行时并执行 JDK 25 compile-only。
+日常入口为 `mise run format`、`mise run check`、`mise run dev`。没有 modern profile 或 modern 任务别名。
 
-探索分支增加了显式启用的 `modern-toolchain` 配置：构建工具运行在 JDK 21+，应用和测试仍为 Java 8。
-入口为 `mise run modern:check`、`mise run modern:compile:25`，设计、复现命令及实测边界见
-[现代工具链与 Java 8 产物实验](docs/experiments/modern-toolchain-java8.md)。原有默认配置与实验结果分别记录。
-
-前置：JDK 8 或以上、Maven 3.6.3–3.x、Python 3.10+，并能访问 Maven Central。mise 入口固定 Maven 3.9.11、Python 3.12.0 和厂商完整 JDK 版本，通过锁文件初始化。
-JDK 25 仅供 compile-only 验收；旧项目也可以直接用 JDK 8 启动原有 Python/Maven 入口。
+前置：构建 JDK 21+、Maven 3.9.11–3.x、Python 3.10+，并能访问所需 Maven 仓库。
+mise 固定 Maven 3.9.11、Python 3.12.0 和完整厂商 JDK 版本；本机覆盖可分别复用构建与运行时 JDK。
 
 ```bash
 python tools/lab.py doctor
 python tools/lab.py selftest
 python tools/lab.py format       # 自动格式化，会修改文件
 python tools/lab.py verify      # 完整测试和质量门禁
-python tools/lab.py fixtures    # 真实 Checkstyle 正/反例 + Java 8 API 反例
+python tools/lab.py fixtures    # Checkstyle 14.4.0 正/反例 + Java 8 API 反例
+python tools/lab.py check --runtime 8 # 在 JDK 21 构建，使用显式选择的 Java 8 测试和 HTTP
 python tools/lab.py compile     # JDK 25 编译/打包与 Java 8 字节码审计，不跑测试
 ```
 
@@ -94,29 +92,28 @@ python tools/http_smoke.py --jar app/target/app-0.2.0-SNAPSHOT.jar
 
 ## 4. 工具链版本
 
-| 工具                      |   固定版本 | 作用                 | Java 8+ 选择依据                            |
+| 工具                      |   固定版本 | 作用                 | 运行环境与兼容边界                            |
 |-------------------------|-------:|--------------------|-----------------------------------------|
 | Maven Enforcer          |  3.5.0 | 强制 Maven / JDK 下限  | 插件最低 JDK 8                              |
-| Maven Compiler          | 3.13.0 | Java 8 API / 字节码目标 | JDK 8+；JDK 8 自动回退 source/target         |
-| Spotless Maven          | 2.30.0 | 格式化与 check         | 官方明确这是支持 JRE 8 的兼容版本线                   |
+| Maven Compiler          | 3.13.0 | Java 8 API / 字节码目标 | JDK 21 构建，使用 --release 8         |
+| Spotless Maven          | 3.11.0 | 格式化与 check         | 随构建宿主在 JDK 21 运行                   |
 | Eclipse JDT Formatter   | 4.12.0 | 复用 Eclipse XML     | Eclipse 4.12 最低 JRE 8                   |
 | Maven Checkstyle Plugin |  3.6.0 | Checkstyle 集成      | 插件最低 JDK 8                              |
-| Checkstyle              |    9.3 | Java 编码规则          | 最低 JRE 8；官方确认 JDK 8–17，JDK 25 待 CI 实测   |
+| Checkstyle              | 14.4.0 | Java 编码规则          | 引擎要求 Java 21+   |
 | ArchUnit                |  1.3.0 | 架构规则测试             | 选用 1.x 兼容线，CI 实际验证                      |
 | JaCoCo                  | 0.8.14 | 覆盖率                | Agent 最低 JRE 低于 8，正式支持 Java 25 class 文件 |
 | Surefire                |  3.2.5 | JUnit 执行           | 插件最低 JDK 8                              |
 | Exec Maven Plugin       |  3.5.1 | 调用 Python 策略适配器    | 插件最低 JDK 8                              |
 
-Spotless Maven 新版本要求 JRE 17；Java 8 场景应使用 2.30.0 或更早版本。Eclipse JDT 4.12.0 可运行于 Java 8。Checkstyle 9.3
-的官方兼容页确认 JDK 8–17，注明更新 JDK 可能可用但尚未确认；因此 JDK 25 的 Checkstyle 运行必须由本项目 CI
-实测。升级工具前必须同时核对插件运行 JDK、Maven 版本、目标语言和 CI 矩阵；不能只看 `release=8` 就声称工具链兼容 Java 8。
+Spotless 与 Checkstyle 属于构建依赖。它们的 JDK 下限不等于应用最低 Java 版本。
+当前保留 Eclipse JDT 4.12.0、现有 codestyle XML 与自动清理无用导入；升级不能删除检查或降低应用兼容验证。
 
 ## 5. 质量门禁与例外机制
 
 | 层次   | 工具 / 机制                               | 首版处理                                    |
 |------|---------------------------------------|-----------------------------------------|
 | 格式   | Spotless + Eclipse JDT XML            | 必须一致；自动修复；不可豁免                          |
-| 编码规范 | Checkstyle 9.3                        | 原始 XML 完整保留，由策略适配器裁决 error/warning      |
+| 编码规范 | Checkstyle 14.4.0                        | 原始 XML 完整保留，由策略适配器裁决 error/warning      |
 | 架构   | ArchUnit                              | Controller 不直接依赖 Repository/Adapter；硬失败 |
 | 行为   | JUnit 5 + MockMvc                     | 状态机、HTTP 契约、并发行为；硬失败                    |
 | 覆盖率  | JaCoCo                                | `domain-core` 行覆盖率 70%、分支覆盖率 60% 硬门槛    |
