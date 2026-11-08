@@ -1,0 +1,108 @@
+# Pinned vendor artifacts for Windows/Linux x64. Java checksums were verified against the sources below.
+# Python 3.12 resolves to an exact attested patch; all checksums are enforced at install.
+lockfile_version = 4
+
+[[tools.java]]
+version = "temurin-17.0.10+7"
+backend = "core:java"
+specifiers = ["temurin-17.0.10+7"]
+
+# Checksum source: https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.10%2B7/OpenJDK17U-jdk_x64_windows_hotspot_17.0.10_7.zip.sha256.txt
+[tools.java.platforms.windows-x64]
+url = "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.10%2B7/OpenJDK17U-jdk_x64_windows_hotspot_17.0.10_7.zip"
+checksum = "sha256:fa963bc6fa54c3537c663d444c7bb4aa8ae9939cba8fadaf672311f352835060"
+
+# Checksum source: https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.10%2B7/OpenJDK17U-jdk_x64_linux_hotspot_17.0.10_7.tar.gz.sha256.txt
+[tools.java.platforms.linux-x64]
+url = "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.10%2B7/OpenJDK17U-jdk_x64_linux_hotspot_17.0.10_7.tar.gz"
+checksum = "sha256:a8fd07e1e97352e97e330beb20f1c6b351ba064ca7878e974c7d68b8a5c1b378"
+
+[[tools.java]]
+version = "zulu-8.94.0.17"
+backend = "core:java"
+specifiers = ["zulu-8.94.0.17"]
+
+# Checksum source: https://api.azul.com/metadata/v1/zulu/packages/e72ffb16-79eb-493d-8094-3c1a314d6084
+[tools.java.platforms.windows-x64]
+url = "https://cdn.azul.com/zulu/bin/zulu8.94.0.17-ca-jdk8.0.492-win_x64.zip"
+checksum = "sha256:376e0e5e76876a7ef916600aa0c32010db3b6a3238520d3ae187a8a19e771b59"
+
+# Checksum source: https://api.azul.com/metadata/v1/zulu/packages/b8c5d927-a86f-49d7-ace9-837176871d51
+[tools.java.platforms.linux-x64]
+url = "https://cdn.azul.com/zulu/bin/zulu8.94.0.17-ca-jdk8.0.492-linux_x64.tar.gz"
+checksum = "sha256:a6d14104f2e7186cba8943c4dc182938db91509dc2c0ef9ecee046c864624d36"
+
+[[tools.java]]
+version = "temurin-11.0.24+8"
+backend = "core:java"
+specifiers = ["temurin-11.0.24+8"]
+
+# Checksum source: https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.24%2B8/OpenJDK11U-jdk_x64_windows_hotspot_11.0.24_8.zip.sha256.txt
+[tools.java.platforms.windows-x64]
+url = "https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.24%2B8/OpenJDK11U-jdk_x64_windows_hotspot_11.0.24_8.zip"
+checksum = "sha256:e0181952006f9779551511d1f449ca33269a58b7b8802f001fd4ceeff2fd01f3"
+
+# Checksum source: https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.24%2B8/OpenJDK11U-jdk_x64_linux_hotspot_11.0.24_8.tar.gz.sha256.txt
+[tools.java.platforms.linux-x64]
+url = "https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.24%2B8/OpenJDK11U-jdk_x64_linux_hotspot_11.0.24_8.tar.gz"
+checksum = "sha256:0e71a01563a5c7b9988a168b0c4ce720a6dff966b3c27bb29d1ded461ff71d0e"
+
+[[tools.java]]
+version = "zulu-21.54.109.0"
+backend = "core:java"
+specifiers = ["zulu-21.54.109.0"]
+
+# Checksum source: https://api.azul.com/metadata/v1/zulu/packages/4ee30e3a-b26a-40d3-9d04-2182eae4075e
+[tools.java.platforms.windows-x64]
+url = "https://cdn.azul.com/zulu/bin/zulu21.54.109-ca-jdk21.0.13.0.3-win_x64.zip"
+checksum = "sha256:7428890c66267aac516514085745dbedc6b8e7703eb0f7d73fb65cf9cd2cf306"
+
+# Checksum source: https://api.azul.com/metadata/v1/zulu/packages/3a7c000f-2eb1-4e4c-b2d0-b9680efe2b95
+[tools.java.platforms.linux-x64]
+url = "https://cdn.azul.com/zulu/bin/zulu21.54.109-ca-jdk21.0.13.0.3-linux_x64.tar.gz"
+checksum = "sha256:abe544103f1c4f0cc4b8997c0cac847eb1e842382eef57ce361c982fb0a3de11"
+
+[[tools.java]]
+version = "zulu-25.38.109.0"
+backend = "core:java"
+specifiers = ["zulu-25.38.109.0"]
+
+# Checksum source: https://api.azul.com/metadata/v1/zulu/packages/47a980b0-effe-4a4d-aaa3-3206176140b8
+[tools.java.platforms.windows-x64]
+url = "https://cdn.azul.com/zulu/bin/zulu25.38.109-ca-jdk25.0.5.0.3-win_x64.zip"
+checksum = "sha256:792e1454a4abdd8379bb335f3f284652487cbb4113c92962312080b5bc661f72"
+
+# Checksum source: https://api.azul.com/metadata/v1/zulu/packages/8eb49e17-13d1-4e18-82d2-d922ce973891
+[tools.java.platforms.linux-x64]
+url = "https://cdn.azul.com/zulu/bin/zulu25.38.109-ca-jdk25.0.5.0.3-linux_x64.tar.gz"
+checksum = "sha256:bb633b566fd501911a850d604d7d3abdfee657a88f2bbacb12e5ebc34727356f"
+
+[[tools.python]]
+version = "3.12.16"
+backend = "core:python"
+specifiers = ["3.12"]
+
+[tools.python."platforms.linux-x64"]
+checksum = "sha256:ce4f6d0a6cfdb3bed6e44c2f9affd85943c76a42e25ad3a259002f31d6fb8a20"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20261026/cpython-3.12.16+20261026-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz"
+provenance = "github-attestations"
+
+[tools.python."platforms.windows-x64"]
+checksum = "sha256:1f2ab53880fc67ea323398c6388e05af28addc99a8e389209f08a51fdff4b149"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20261026/cpython-3.12.16+20261026-x86_64-pc-windows-msvc-install_only_stripped.tar.gz"
+provenance = "github-attestations"
+
+[[tools."http:maven"]]
+version = "3.9.11"
+backend = "http:maven"
+specifiers = ["3.9.11"]
+
+# Checksum source: https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.11/apache-maven-3.9.11-bin.tar.gz.sha512
+[tools."http:maven".platforms.windows-x64]
+url = "https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.11/apache-maven-3.9.11-bin.tar.gz"
+checksum = "sha512:bcfe4fe305c962ace56ac7b5fc7a08b87d5abd8b7e89027ab251069faebee516b0ded8961445d6d91ec1985dfe30f8153268843c89aa392733d1a3ec956c9978"
+
+# Checksum source: https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.11/apache-maven-3.9.11-bin.tar.gz.sha512
+[tools."http:maven".platforms.linux-x64]
+url = "https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.11/apache-maven-3.9.11-bin.tar.gz"
+checksum = "sha512:bcfe4fe305c962ace56ac7b5fc7a08b87d5abd8b7e89027ab251069faebee516b0ded8961445d6d91ec1985dfe30f8153268843c89aa392733d1a3ec956c9978"

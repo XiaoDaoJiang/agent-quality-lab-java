@@ -30,14 +30,24 @@
                     <execution>
                         <id>core-coverage-floor</id>
                         <phase>verify</phase>
-                        <goals><goal>check</goal></goals>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
                         <configuration>
                             <rules>
                                 <rule>
                                     <element>BUNDLE</element>
                                     <limits>
-                                        <limit><counter>LINE</counter><value>COVEREDRATIO</value><minimum>0.70</minimum></limit>
-                                        <limit><counter>BRANCH</counter><value>COVEREDRATIO</value><minimum>0.60</minimum></limit>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.70</minimum>
+                                        </limit>
+                                        <limit>
+                                            <counter>BRANCH</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.60</minimum>
+                                        </limit>
                                     </limits>
                                 </rule>
                             </rules>

@@ -1,0 +1,111 @@
+min_version = "2026.11.2"
+
+# Shared, downloadable versions. Machine paths belong only in ignored local overrides.
+[tools]
+java = ["zulu-21.54.109.0", "zulu-8.94.0.17", "temurin-11.0.24+8", "temurin-17.0.10+7", "zulu-25.38.109.0"]
+# Request the 3.12 series; mise.lock pins the verified patch and artifacts.
+python = "3.12"
+"http:maven" = { version = "3.9.11", url = "https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/{{ version }}/apache-maven-{{ version }}-bin.tar.gz", checksum = "sha512:bcfe4fe305c962ace56ac7b5fc7a08b87d5abd8b7e89027ab251069faebee516b0ded8961445d6d91ec1985dfe30f8153268843c89aa392733d1a3ec956c9978", bin_path = "apache-maven-3.9.11/bin" }
+
+[settings]
+auto_install = false
+# shortcut: tasks share Maven targets; use isolated workspaces if concurrent runs are required.
+jobs = 1
+
+[env]
+PYTHONUTF8 = "1"
+MAVEN_HOME = false
+M2_HOME = false
+LAB_EXPECTED_JAVA = "21"
+LAB_EXPECTED_JAVA_VERSION = "21.0.13.0.3"
+LAB_EXPECTED_MAVEN = "3.9.11"
+LAB_EXPECTED_PYTHON = "3.12"
+
+[tasks.doctor]
+description = "Check Python, Maven, selected JDK and policy metadata"
+run = "python tools/lab.py doctor"
+
+[tasks.selftest]
+description = "Run governance-tool regression tests"
+run = "python tools/lab.py selftest"
+
+[tasks."config:check"]
+description = "Validate portable tool declarations and Windows/Linux artifact locks"
+run = "python tools/check_mise.py"
+
+[tasks.format]
+description = "Apply the existing Spotless formatter (modifies sources)"
+run = "python tools/lab.py format"
+
+[tasks.verify]
+alias = ["build", "test"]
+description = "Clean build, tests, quality gates, package and bytecode audit"
+run = "python tools/lab.py verify"
+
+[tasks.fixtures]
+description = "Run real static-checker and Java 8 API fixtures"
+run = "python tools/lab.py fixtures"
+
+[tasks.smoke]
+description = "Verify an existing JAR on Java 8; does not rebuild it"
+tools.java = "zulu-8.94.0.17"
+env.LAB_EXPECTED_JAVA = "8"
+env.LAB_EXPECTED_JAVA_VERSION = "1.8.0_492"
+run = "python tools/http_smoke.py --jar app/target/app-0.2.0-SNAPSHOT.jar"
+
+[tasks.check]
+description = "Build on JDK 21, run all tests and HTTP smoke on Java 8"
+run = [{ task = "config:check" }, { task = "check:8" }]
+
+[tasks.start]
+description = "Start an existing JAR on Java 8 at 127.0.0.1:8080; Ctrl+C stops it"
+tools.java = "zulu-8.94.0.17"
+env.LAB_EXPECTED_JAVA = "8"
+env.LAB_EXPECTED_JAVA_VERSION = "1.8.0_492"
+raw = true
+run = "python tools/lab.py start"
+
+[tasks.dev]
+description = "Build with all gates, then start the resulting JAR"
+run = [{ task = "verify" }, { task = "start" }]
+
+[tasks."check:8"]
+description = "Build on JDK 21; full Java 8 test and HTTP acceptance"
+env.LAB_RUNTIME_JAVA = "zulu-8.94.0.17"
+env.LAB_RUNTIME_JAVA_VERSION = "1.8.0_492"
+run = "python tools/lab.py check --runtime 8"
+
+[tasks."check:11"]
+description = "Build on JDK 21; full Java 11 test and HTTP acceptance"
+env.LAB_RUNTIME_JAVA = "temurin-11.0.24+8"
+env.LAB_RUNTIME_JAVA_VERSION = "11.0.24"
+run = "python tools/lab.py check --runtime 11"
+
+[tasks."check:17"]
+description = "Build on JDK 21; full Java 17 test and HTTP acceptance"
+env.LAB_RUNTIME_JAVA = "temurin-17.0.10+7"
+env.LAB_RUNTIME_JAVA_VERSION = "17.0.10"
+run = "python tools/lab.py check --runtime 17"
+
+[tasks."check:21"]
+description = "Build on JDK 21; full Java 21 test and HTTP acceptance"
+env.LAB_RUNTIME_JAVA = "zulu-21.54.109.0"
+env.LAB_RUNTIME_JAVA_VERSION = "21.0.13.0.3"
+run = "python tools/lab.py check --runtime 21"
+
+[tasks."compile:25"]
+description = "JDK 25 compile-only lane; never starts the application"
+tools.java = "zulu-25.38.109.0"
+env.LAB_EXPECTED_JAVA = "25"
+env.LAB_EXPECTED_JAVA_VERSION = "25.0.5.0.3"
+run = ["python tools/lab.py doctor", "python tools/lab.py compile"]
+
+[tasks.matrix]
+description = "Serial JDK 21 build / Java 8,11,17,21 runtime matrix, then JDK 25 compile-only"
+run = [
+  { task = "check:8" },
+  { task = "check:11" },
+  { task = "check:17" },
+  { task = "check:21" },
+  { task = "compile:25" },
+]

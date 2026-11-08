@@ -19,7 +19,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.build.outputTimestamp>2026-11-05T00:00:00Z</project.build.outputTimestamp>
 
-        <!-- The single project baseline is Java 8. JDK 25 is an additional build-host lane. -->
+        <!-- Build tools require JDK 21+; production/test syntax, API and bytecode remain Java 8. -->
         <maven.compiler.release>8</maven.compiler.release>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
@@ -28,12 +28,13 @@
         <quality.python>python3</quality.python>
         <quality.root>${maven.multiModuleProjectDirectory}</quality.root>
         <spring-boot.version>2.7.18</spring-boot.version>
-        <checkstyle.version>9.3</checkstyle.version>
-        <spotless.version>2.30.0</spotless.version>
+        <checkstyle.version>14.4.0</checkstyle.version>
+        <spotless.version>3.11.0</spotless.version>
         <eclipse.formatter.version>4.12.0</eclipse.formatter.version>
         <archunit.version>1.3.0</archunit.version>
         <jacoco.version>0.8.14</jacoco.version>
         <argLine></argLine>
+        <lab.expectedJava>${java.specification.version}</lab.expectedJava>
     </properties>
 
     <dependencyManagement>
@@ -93,11 +94,17 @@
                     <execution>
                         <id>build-environment</id>
                         <phase>validate</phase>
-                        <goals><goal>enforce</goal></goals>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
                         <configuration>
                             <rules>
-                                <requireJavaVersion><version>[1.8,)</version></requireJavaVersion>
-                                <requireMavenVersion><version>[3.6.3,4)</version></requireMavenVersion>
+                                <requireJavaVersion>
+                                    <version>[21,)</version>
+                                </requireJavaVersion>
+                                <requireMavenVersion>
+                                    <version>[3.9.11,4)</version>
+                                </requireMavenVersion>
                             </rules>
                         </configuration>
                     </execution>
@@ -131,7 +138,9 @@
                     <execution>
                         <id>collect-raw-checkstyle</id>
                         <phase>validate</phase>
-                        <goals><goal>checkstyle</goal></goals>
+                        <goals>
+                            <goal>checkstyle</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
@@ -144,14 +153,18 @@
                     <execution>
                         <id>enforce-quality-policy</id>
                         <phase>validate</phase>
-                        <goals><goal>exec</goal></goals>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
                         <configuration>
                             <executable>${quality.python}</executable>
                             <arguments>
                                 <argument>${quality.root}/tools/quality_gate.py</argument>
                                 <argument>evaluate</argument>
-                                <argument>--root</argument><argument>${quality.root}</argument>
-                                <argument>--module</argument><argument>${project.basedir}</argument>
+                                <argument>--root</argument>
+                                <argument>${quality.root}</argument>
+                                <argument>--module</argument>
+                                <argument>${project.basedir}</argument>
                             </arguments>
                         </configuration>
                     </execution>
@@ -172,9 +185,11 @@
                         </includes>
                         <eclipse>
                             <version>${eclipse.formatter.version}</version>
-                            <file>${quality.root}/config/formatter/eclipse.xml</file>
+                            <file>${quality.root}/config/formatter/eclipse-codestyle.xml</file>
                         </eclipse>
-                        <importOrder><order>java,javax,org,com,dev,,\#</order></importOrder>
+                        <importOrder>
+                            <order>java,javax,org,com,dev,,\#</order>
+                        </importOrder>
                         <removeUnusedImports/>
                         <trimTrailingWhitespace/>
                         <endWithNewline/>
@@ -184,7 +199,9 @@
                     <execution>
                         <id>format-check</id>
                         <phase>validate</phase>
-                        <goals><goal>check</goal></goals>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
@@ -194,7 +211,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
                 <configuration>
-                    <!-- Compiler Plugin 3.13.0 maps release=8 to source/target on a JDK 8 host. -->
+                    <!-- Compile with the build JDK; restrict both API and bytecode to Java 8. -->
                     <release>8</release>
                     <source>1.8</source>
                     <target>1.8</target>
@@ -214,6 +231,9 @@
                     <failIfNoTests>false</failIfNoTests>
                     <useModulePath>false</useModulePath>
                     <argLine>@{argLine}</argLine>
+                    <systemPropertyVariables>
+                        <lab.expectedJava>${lab.expectedJava}</lab.expectedJava>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
 
@@ -222,8 +242,19 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco.version}</version>
                 <executions>
-                    <execution><id>coverage-agent</id><goals><goal>prepare-agent</goal></goals></execution>
-                    <execution><id>coverage-report</id><phase>verify</phase><goals><goal>report</goal></goals></execution>
+                    <execution>
+                        <id>coverage-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>coverage-report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>
@@ -232,8 +263,14 @@
     <profiles>
         <profile>
             <id>windows</id>
-            <activation><os><family>Windows</family></os></activation>
-            <properties><quality.python>python</quality.python></properties>
+            <activation>
+                <os>
+                    <family>Windows</family>
+                </os>
+            </activation>
+            <properties>
+                <quality.python>python</quality.python>
+            </properties>
         </profile>
     </profiles>
 </project>

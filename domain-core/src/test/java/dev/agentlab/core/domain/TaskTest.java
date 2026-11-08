@@ -21,7 +21,7 @@ class TaskTest {
 
     @ParameterizedTest
     @NullAndEmptySource
-    @ValueSource(strings = { " ", "\t\n" })
+    @ValueSource(strings = {" ", "\t\n"})
     void rejectsBlankTitle(String title) {
         assertThrows(IllegalArgumentException.class, () -> Task.create(UUID.randomUUID(), title));
     }

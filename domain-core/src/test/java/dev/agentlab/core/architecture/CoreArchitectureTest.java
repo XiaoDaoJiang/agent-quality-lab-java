@@ -13,12 +13,11 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class CoreArchitectureTest {
-    private static final ArchRule DOMAIN_RULE = noClasses().that().resideInAPackage("..domain..")
-            .should().dependOnClassesThat().resideInAnyPackage("..adapter..", "..application..",
-                    "..ports..", "org.springframework..");
+    private static final ArchRule DOMAIN_RULE =
+        noClasses().that().resideInAPackage("..domain..").should().dependOnClassesThat()
+            .resideInAnyPackage("..adapter..", "..application..", "..ports..", "org.springframework..");
     private final JavaClasses classes = new ClassFileImporter()
-            .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
-            .importPackages("dev.agentlab.core");
+        .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS).importPackages("dev.agentlab.core");
 
     @Test
     void domainDoesNotDependOnInfrastructureOrApplication() {
@@ -33,15 +32,13 @@ class CoreArchitectureTest {
 
     @Test
     void applicationUsesPortsInsteadOfConcreteAdapters() {
-        noClasses().that().resideInAPackage("..application..")
-                .should().dependOnClassesThat().resideInAnyPackage("..adapter..", "org.springframework..")
-                .check(classes);
+        noClasses().that().resideInAPackage("..application..").should().dependOnClassesThat()
+            .resideInAnyPackage("..adapter..", "org.springframework..").check(classes);
     }
 
     @Test
     void coreHasNoSpringOrWebRuntimeDependency() {
         noClasses().should().dependOnClassesThat()
-                .resideInAnyPackage("org.springframework..", "jakarta.servlet..", "javax.servlet..")
-                .check(classes);
+            .resideInAnyPackage("org.springframework..", "jakarta.servlet..", "javax.servlet..").check(classes);
     }
 }

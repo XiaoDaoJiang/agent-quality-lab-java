@@ -11,3 +11,8 @@ __pycache__/
 !.env.example
 .toolchains.local.xml
 .lab/
+mise.local.toml
+mise.*.local.toml
+mise.local.lock
+mise.*.local.lock
+.mise/locks/mise.local/

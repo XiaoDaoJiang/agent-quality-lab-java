@@ -25,7 +25,7 @@ class InMemoryTaskRepositoryTest {
         assertThrows(IllegalStateException.class, () -> repository.insert(task));
         assertThrows(NullPointerException.class, () -> repository.update(task.getId(), old -> null));
         assertThrows(IllegalArgumentException.class,
-                () -> repository.update(task.getId(), old -> Task.create(UUID.randomUUID(), "different")));
+            () -> repository.update(task.getId(), old -> Task.create(UUID.randomUUID(), "different")));
         assertEquals(TaskStatus.TODO, repository.find(task.getId()).get().getStatus());
     }
 
@@ -34,8 +34,7 @@ class InMemoryTaskRepositoryTest {
         InMemoryTaskRepository repository = new InMemoryTaskRepository();
         Task task = Task.create(UUID.randomUUID(), "task");
         repository.insert(task);
-        ThreadPoolExecutor executor = new ThreadPoolExecutor(2, 2, 0, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(2));
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(2, 2, 0, TimeUnit.SECONDS, new LinkedBlockingQueue<>(2));
         try {
             Callable<Boolean> complete = () -> attempt(() -> repository.update(task.getId(), Task::complete));
             Callable<Boolean> cancel = () -> attempt(() -> repository.update(task.getId(), Task::cancel));

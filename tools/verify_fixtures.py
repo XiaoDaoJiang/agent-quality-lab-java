@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Run real Checkstyle against isolated negative/positive fixtures; do not modify app sources."""
+import argparse
 import json
 from pathlib import Path
 import shutil
@@ -11,7 +12,18 @@ import xml.etree.ElementTree as ET
 from lab import ROOT, maven_command
 
 
+def checker_version(pom):
+    namespace = {"m": "http://maven.apache.org/POM/4.0.0"}
+    parent = ET.parse(pom)
+    value = parent.find("m:properties/m:checkstyle.version", namespace)
+    if value is None or not value.text:
+        raise RuntimeError("Missing explicit Checkstyle version")
+    return value.text
+
+
 def main():
+    argparse.ArgumentParser(description=__doc__).parse_args()
+    version = checker_version(ROOT / "pom.xml")
     work = ROOT / "target/fixture-checkstyle"
     if work.exists():
         shutil.rmtree(work)
@@ -20,9 +32,6 @@ def main():
     for path in (ROOT/"experiments/checkstyle").glob("*.java.txt"):
         shutil.copyfile(path, source/path.name.removesuffix(".txt"))
     expectations = json.loads((ROOT/"experiments/checkstyle/expectations.json").read_text(encoding="utf-8"))
-    namespace = {"m": "http://maven.apache.org/POM/4.0.0"}
-    parent = ET.parse(ROOT/"pom.xml")
-    version = parent.find("m:properties/m:checkstyle.version", namespace).text
     # Reuse the real config and pinned checker. Use XML builders, not string interpolation of paths.
     project = ET.Element("project", xmlns="http://maven.apache.org/POM/4.0.0")
     for key,value in (("modelVersion","4.0.0"),("groupId","dev.agentlab.fixtures"),
@@ -60,7 +69,7 @@ def main():
             raise RuntimeError(f"Fixture {name}: expected {wanted}, got {actual.get(name)}")
     if set(actual) != set(expectations):
         raise RuntimeError("Fixture report source coverage mismatch")
-    print(f"REAL CHECKSTYLE FIXTURES PASSED: {len(expectations)}")
+    print(f"REAL CHECKSTYLE FIXTURES PASSED: {len(expectations)}; engine={version}")
     # --release must reject APIs that were introduced after Java 8.
     with tempfile.TemporaryDirectory(prefix="agentlab-release8-") as folder:
         path=Path(folder)/"UsesJava9Api.java"
@@ -77,9 +86,10 @@ def main():
         if major == 1:
             major=int(match.group(2) or 0)
         compile_args=[javac,"--release","8"] if major >= 9 else [javac,"-source","1.8","-target","1.8"]
-        compile_result=subprocess.run(compile_args+[str(path)],capture_output=True,text=True)
-        if compile_result.returncode == 0 or "of" not in compile_result.stderr:
-            raise RuntimeError("Java 9 API rejection was not observed; inspect compiler output: "+compile_result.stderr)
+        compile_result=subprocess.run(compile_args+[str(path)],capture_output=True)
+        if compile_result.returncode == 0 or b"of" not in compile_result.stderr:
+            raise RuntimeError("Java 9 API rejection was not observed; inspect compiler output: "
+                               + compile_result.stderr.decode(errors="replace"))
     print("JAVA 8 API NEGATIVE FIXTURE PASSED")
     return 0
 

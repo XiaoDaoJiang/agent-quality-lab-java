@@ -25,8 +25,9 @@ class BytecodeCompatibilityTest {
 
     @Test
     void testRuntimeMatchesSelectedLane() {
-        String expected = System.getProperty("lab.expectedJava", "25");
+        String expected = System.getProperty("lab.expectedJava");
         String actual = System.getProperty("java.specification.version");
-        assertEquals(expected, "1.8".equals(actual) ? "8" : actual);
+        assertNotNull(expected);
+        assertEquals("1.8".equals(expected) ? "8" : expected, "1.8".equals(actual) ? "8" : actual);
     }
 }

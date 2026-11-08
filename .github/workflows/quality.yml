@@ -3,7 +3,7 @@ name: Quality
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [ main ]
   workflow_dispatch:
 
 permissions:
@@ -54,16 +54,19 @@ jobs:
 
   quality:
     name: Runtime compatibility (${{ matrix.java }})
-    needs: [policy_scope, policy_approval]
+    needs: [ policy_scope, policy_approval ]
     if: >-
       always() && needs.policy_scope.result == 'success' &&
       (needs.policy_approval.result == 'success' || needs.policy_approval.result == 'skipped')
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      LAB_EXPECTED_JAVA: '21'
+      LAB_EXPECTED_MAVEN: '3.9.11'
     strategy:
       fail-fast: false
       matrix:
-        java: ['8', '11', '17', '21']
+        java: [ '8', '11', '17', '21' ]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -72,22 +75,29 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - uses: actions/setup-java@v4
+      - id: runtime
+        name: Install the selected test/application runtime
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ matrix.java }}
-          cache: maven
-      - uses: s4u/setup-maven-action@v1.18.0
+      - name: Select JDK 21 and Maven for build tools
+        uses: s4u/setup-maven-action@v1.18.0
         with:
+          checkout-enabled: 'false'
+          java-version: '21'
+          java-distribution: temurin
           maven-version: 3.9.11
       - name: Environment
         run: python tools/lab.py doctor
-      - name: Full quality verification on this runtime
-        run: python tools/lab.py verify
+      - name: Full quality verification with tests forked to this runtime
+        run: python tools/lab.py verify --test-java "${{ steps.runtime.outputs.path }}/bin/java"
       - name: Real static-checker and Java 8 API compatibility fixtures
         run: python tools/lab.py fixtures
       - name: Executable JAR HTTP smoke on this runtime
-        run: python tools/http_smoke.py --jar app/target/app-0.2.0-SNAPSHOT.jar
+        env:
+          LAB_EXPECTED_JAVA: ${{ matrix.java }}
+        run: python tools/http_smoke.py --java "${{ steps.runtime.outputs.path }}/bin/java" --jar app/target/app-0.2.0-SNAPSHOT.jar
       - name: Preserve raw evidence even when a gate fails
         if: always()
         uses: actions/upload-artifact@v4
@@ -108,12 +118,15 @@ jobs:
 
   jdk25_compile:
     name: JDK 25 compile-only compatibility
-    needs: [policy_scope, policy_approval]
+    needs: [ policy_scope, policy_approval ]
     if: >-
       always() && needs.policy_scope.result == 'success' &&
       (needs.policy_approval.result == 'success' || needs.policy_approval.result == 'skipped')
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      LAB_EXPECTED_JAVA: '25'
+      LAB_EXPECTED_MAVEN: '3.9.11'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -122,13 +135,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - uses: actions/setup-java@v4
+      - name: Select JDK 25 and Maven for compile-only
+        uses: s4u/setup-maven-action@v1.18.0
         with:
-          distribution: temurin
+          checkout-enabled: 'false'
           java-version: '25'
-          cache: maven
-      - uses: s4u/setup-maven-action@v1.18.0
-        with:
+          java-distribution: temurin
           maven-version: 3.9.11
       - name: Compile and package Java 8 bytecode on JDK 25
         run: python tools/lab.py compile
@@ -146,10 +158,54 @@ jobs:
             target/lab-summary.json
             .lab/runs/**
 
+  mise_entrypoint:
+    name: Portable mise entrypoint (${{ matrix.os }})
+    needs: [ policy_scope, policy_approval ]
+    if: >-
+      always() && needs.policy_scope.result == 'success' &&
+      (needs.policy_approval.result == 'success' || needs.policy_approval.result == 'skipped')
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest ]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3
+        with:
+          version: 2026.11.2
+          install: false
+          env: false
+      - name: Install only locked toolchain artifacts
+        run: mise install --locked
+      - name: Validate task graph
+        run: mise tasks validate
+      - name: Validate shared declarations
+        run: mise exec -- python tools/check_mise.py
+      - name: Build with JDK 21 and run Java 8 tests and HTTP smoke
+        run: mise run check
+      - name: Preserve entrypoint and environment evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mise-evidence-${{ matrix.os }}
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            .lab/runs/**
+            **/target/surefire-reports/**
+            **/target/quality-summary.json
+            target/lab-summary.json
+            target/smoke/**
+
   quality_gate:
     name: quality-gate
     if: always()
-    needs: [policy_scope, policy_approval, quality, jdk25_compile]
+    needs: [ policy_scope, policy_approval, quality, jdk25_compile, mise_entrypoint ]
     runs-on: ubuntu-latest
     steps:
       - name: All mandatory jobs must succeed
@@ -158,8 +214,10 @@ jobs:
           APPROVAL: ${{ needs.policy_approval.result }}
           RUNTIME_MATRIX: ${{ needs.quality.result }}
           JDK25_COMPILE: ${{ needs.jdk25_compile.result }}
+          MISE_ENTRYPOINT: ${{ needs.mise_entrypoint.result }}
         run: |
           test "$SCOPE" = success
           test "$APPROVAL" = success || test "$APPROVAL" = skipped
           test "$RUNTIME_MATRIX" = success
           test "$JDK25_COMPILE" = success
+          test "$MISE_ENTRYPOINT" = success
