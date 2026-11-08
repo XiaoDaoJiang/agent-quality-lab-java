@@ -93,7 +93,11 @@ def validate_environment(data, expected, require_build=True):
                              ("LAB_EXPECTED_JAVA_VERSION", "java", "version"),
                              ("LAB_EXPECTED_MAVEN", "maven", "version"),
                              ("LAB_EXPECTED_PYTHON", "python", "version")):
-        if expected.get(key) and data[tool][field] != expected[key]:
+        actual = data[tool][field]
+        matches = actual == expected.get(key)
+        if key == "LAB_EXPECTED_PYTHON" and expected.get(key) == "3.12":
+            matches = bool(re.fullmatch(r"3\.12\.\d+", actual or ""))
+        if expected.get(key) and not matches:
             errors.append(f"{'Java' if tool == 'java' else tool} mismatch: expected {expected[key]}, actual {data[tool][field]}")
     home = data["variables"].get("JAVA_HOME")
     actual_home = data["java"].get("home")

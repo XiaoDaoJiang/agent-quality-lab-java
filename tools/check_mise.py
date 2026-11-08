@@ -11,7 +11,8 @@ def validate(config, lock):
     for name, value in config["tools"].items():
         for entry in value if isinstance(value, list) else [value]:
             version = entry if isinstance(entry, str) else entry.get("version", "")
-            if not re.fullmatch(r"(?:temurin-\d+\.\d+\.\d+\+\d+|zulu-\d+\.\d+\.\d+\.\d+|\d+\.\d+\.\d+)", version):
+            python_series = name == "python" and version == "3.12"
+            if not python_series and not re.fullmatch(r"(?:temurin-\d+\.\d+\.\d+\+\d+|zulu-\d+\.\d+\.\d+\.\d+|\d+\.\d+\.\d+)", version):
                 errors.append("Not an exact downloadable version: " + name + "@" + version)
             if isinstance(entry, dict) and "path" in entry:
                 errors.append("Machine paths are not allowed in shared tools: " + name)
@@ -21,10 +22,22 @@ def validate(config, lock):
         errors.append("Local alias or absolute machine path in shared configuration")
     for name, version in requested:
         entries = lock.get("tools", {}).get(name, [])
-        entry = next((item for item in entries if item["version"] == version), {})
+        if name == "python" and version == "3.12":
+            if lock.get("lockfile_version") != 4:
+                errors.append("Python series requests require mise lockfile format 4")
+            matches = [item for item in entries if version in item.get("specifiers", [])]
+            entry = matches[0] if len(matches) == 1 else {}
+            if not re.fullmatch(r"3\.12\.\d+", entry.get("version", "")):
+                errors.append("Python 3.12 needs one exact 3.12.x lock with specifiers = [\"3.12\"]")
+            if config.get("env", {}).get("LAB_EXPECTED_PYTHON") != version:
+                errors.append("Python runtime expectation must match the shared 3.12 request")
+        else:
+            entry = next((item for item in entries if item["version"] == version), {})
         # mise versions serialize platform tables in both nested and dotted-key forms.
         for platform in ("windows-x64", "linux-x64"):
             info = entry.get("platforms", {}).get(platform, entry.get("platforms." + platform, {}))
+            if name == "python" and version == "3.12" and info.get("provenance") != "github-attestations":
+                errors.append("Missing Python GitHub attestation provenance: " + platform)
             if not info.get("url", "").startswith("https://") or not re.fullmatch(
                     r"(?:sha256:[0-9a-f]{64}|sha512:[0-9a-f]{128})", info.get("checksum", "")):
                 errors.append("Missing locked HTTPS URL/checksum: " + name + "@" + version + " " + platform)
@@ -67,7 +80,7 @@ def main():
     for error in errors:
         print("MISE CONFIG ERROR:", error, file=sys.stderr)
     if not errors:
-        print("MISE CONFIG PASSED: exact shared versions and Windows/Linux artifact locks")
+        print("MISE CONFIG PASSED: shared requests and exact Windows/Linux artifact locks")
     return int(bool(errors))
 
 

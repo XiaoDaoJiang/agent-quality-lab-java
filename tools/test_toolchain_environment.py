@@ -48,6 +48,26 @@ class ToolchainEnvironmentTest(unittest.TestCase):
             "LAB_EXPECTED_JAVA": "21", "LAB_EXPECTED_JAVA_VERSION": "21.0.11",
             "LAB_EXPECTED_MAVEN": "3.9.11", "LAB_EXPECTED_PYTHON": "3.12.0"}))
 
+    def test_python_series_accepts_stable_patches_only(self):
+        for version in ("3.12.0", "3.12.16", "3.12.99"):
+            with self.subTest(version=version):
+                data = self.environment()
+                data["python"]["version"] = version
+                self.assertEqual([], validate_environment(data, {"LAB_EXPECTED_PYTHON": "3.12"}))
+        for version in ("3.11.16", "3.13.1", "3.120.1", "3.12", "3.12.16rc1", None):
+            with self.subTest(version=version):
+                data = self.environment()
+                data["python"]["version"] = version
+                self.assertIn("python mismatch", " ".join(
+                    validate_environment(data, {"LAB_EXPECTED_PYTHON": "3.12"})))
+
+    def test_python_exact_patch_expectation_stays_exact(self):
+        data = self.environment()
+        data["python"]["version"] = "3.12.16"
+        self.assertEqual([], validate_environment(data, {"LAB_EXPECTED_PYTHON": "3.12.16"}))
+        self.assertIn("python mismatch", " ".join(
+            validate_environment(data, {"LAB_EXPECTED_PYTHON": "3.12.0"})))
+
     def test_release_change_and_failed_tool_cannot_pass(self):
         data = self.environment()
         data["compileRelease"] = "17"

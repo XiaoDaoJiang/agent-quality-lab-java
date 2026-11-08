@@ -50,7 +50,8 @@ mise 需 2026.11.2；默认构建使用 JDK 21，产物保持 Java 8。
 日常入口为 `mise run format`、`mise run check`、`mise run dev`。没有 modern profile 或 modern 任务别名。
 
 前置：构建 JDK 21+、Maven 3.9.11–3.x、Python 3.10+，并能访问所需 Maven 仓库。
-mise 固定 Maven 3.9.11、Python 3.12.0 和完整厂商 JDK 版本；本机覆盖可分别复用构建与运行时 JDK。
+mise 固定 Maven 3.9.11 和完整厂商 JDK 版本；Python 声明 3.12 系列，由锁文件固定已验签的 3.12.x 补丁及下载构件。
+本机覆盖可分别复用构建与运行时 JDK。
 
 ```bash
 python tools/lab.py doctor

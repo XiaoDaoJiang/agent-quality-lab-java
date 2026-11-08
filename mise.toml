@@ -3,7 +3,8 @@ min_version = "2026.11.2"
 # Shared, downloadable versions. Machine paths belong only in ignored local overrides.
 [tools]
 java = ["zulu-21.54.109.0", "zulu-8.94.0.17", "temurin-11.0.24+8", "temurin-17.0.10+7", "zulu-25.38.109.0"]
-python = "3.12.0"
+# Request the 3.12 series; mise.lock pins the verified patch and artifacts.
+python = "3.12"
 "http:maven" = { version = "3.9.11", url = "https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/{{ version }}/apache-maven-{{ version }}-bin.tar.gz", checksum = "sha512:bcfe4fe305c962ace56ac7b5fc7a08b87d5abd8b7e89027ab251069faebee516b0ded8961445d6d91ec1985dfe30f8153268843c89aa392733d1a3ec956c9978", bin_path = "apache-maven-3.9.11/bin" }
 
 [settings]
@@ -18,7 +19,7 @@ M2_HOME = false
 LAB_EXPECTED_JAVA = "21"
 LAB_EXPECTED_JAVA_VERSION = "21.0.13.0.3"
 LAB_EXPECTED_MAVEN = "3.9.11"
-LAB_EXPECTED_PYTHON = "3.12.0"
+LAB_EXPECTED_PYTHON = "3.12"
 
 [tasks.doctor]
 description = "Check Python, Maven, selected JDK and policy metadata"

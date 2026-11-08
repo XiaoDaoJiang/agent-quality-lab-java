@@ -26,7 +26,8 @@ mise run check
 配置不使用本机别名、磁盘路径或 latest。
 
 共享版本为 Temurin 17.0.10+7、Temurin 11.0.24+8、Zulu 8.94.0.17（Java 8u492）、
-Zulu 21.54.109.0、Zulu 25.38.109.0、Python 3.12.0 和 Maven 3.9.11。
+Zulu 21.54.109.0、Zulu 25.38.109.0 和 Maven 3.9.11。Python 声明 `3.12` 系列，
+`LAB_EXPECTED_PYTHON=3.12` 允许该系列稳定补丁，`mise.lock` 当前固定 Python 3.12.16（20261026 构建）。
 相对于此前本机方案，Java 8 验收环境由 Oracle 8u202 改为可公开获取的 Zulu 8u492，Maven 从 3.9.6 统一为 CI 已使用的 3.9.11。
 应用语法、API 和字节码目标仍为 Java 8；现有 Eclipse 排版引擎、codestyle XML、规则和阈值保留。
 
@@ -34,7 +35,14 @@ Maven 使用官方 Maven Central 发行包及官方 SHA-512，通过 mise HTTP b
 发行包保留顶层目录，`bin_path` 指向该目录中的 `bin`，遵循 [HTTP backend 的解包与路径约定](https://mise.jdx.dev/dev-tools/backends/http.html#bin-path)。
 Java 的锁条目来自厂商官方发布 URL 和校验值：Temurin 发布附件的 `.sha256.txt`、Azul 包元数据 API。
 本机无法访问 mise Java 元数据服务，因此本轮以这些真实厂商数据补齐锁文件，没有关闭校验或伪造缺失条目。
-Python 条目保留 mise 解析的固定下载 URL 和校验值。各平台是不同的二进制文件，不要求平台间包哈希相同。
+Python 条目由 mise 2026.11.2 解析并验证 GitHub attestations，保留固定下载 URL、SHA-256 和
+`provenance = "github-attestations"`。锁格式升级为 4，`specifiers = ["3.12"]` 将系列声明绑定到确定补丁；
+Java/Maven 的版本、URL 和校验值保持不变。各平台是不同的二进制文件，不要求平台间包哈希相同。
+
+Python 补丁更新须在独立审查变更中运行 `mise lock python@3.12.x --platform linux-x64,windows-x64`，
+将 `3.12.x` 替换为实际候选版本，重新验签并测试。日常初始化继续使用 `mise install --locked`，
+不改成非锁定安装，也不关闭 GitHub attestations。配置检查拒绝系列错配、浮动锁版本、缺失/重复的系列映射及平台校验缺失。
+2026-11-08 补验及保留的验签警告见 [交付验证](DELIVERY-VALIDATION.md)。
 
 ## 可选的本机安装复用
 

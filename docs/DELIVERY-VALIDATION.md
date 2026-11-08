@@ -1,5 +1,37 @@
 # 工具链验收与验证边界
 
+## 2026-11-08：Python 3.12 系列与已验签补丁
+
+PR #1 的旧提交 `a3983ef` 在两个 mise 入口均因 Python 3.12.0 的 20231002 构件缺少 GitHub attestations 失败；
+[原始 CI](https://github.com/XiaoDaoJiang/agent-quality-lab-java/actions/runs/42363765688) 的 Java 8/11/17/21 和 JDK 25 通道已通过。
+本次将共享声明和运行时预期改为 `3.12`，锁定实际验证的 Python 3.12.16（20261026 构建），不关闭 attestations。
+
+锁文件由 mise 2026.11.2 生成并升级为格式 4，包含 `specifiers = ["3.12"]` 和两个平台的 attestation provenance。
+保留原有 Java/Maven 下载地址、校验值、来源注释及排序；归一化 TOML 与 mise 生成结果相等。
+回归改变的是“系列请求 + 确定补丁锁”的契约：允许稳定 3.12.x，仍拒绝其他系列、预发布版、浮动锁、缺失/重复映射、
+缺失平台校验或 provenance；显式的 Python 补丁预期仍须精确匹配。Java/Maven 校验、应用基线、质量阈值及 CI 未改。
+
+本轮 Linux x64 原始日志保存在 `.lab/python312-fix/`，被 Git 忽略。首次推送前的实际结果：
+
+| 命令/检查 | 退出码与结果 | 日志 |
+|---|---|---|
+| mise 官方安装包 SHA-256 校验 | 0；使用隔离的 mise 2026.11.2 | `bootstrap/SHASUMS256.txt` |
+| `mise lock python@3.12.16 --platform linux-x64,windows-x64`，随后 `mise lock --upgrade` | 均为 0；两个平台构件 attestations 验证通过 | `lock-generation.log`、`lock-upgrade.log` |
+| `MISE_LOCKED_VERIFY_PROVENANCE=true mise install --locked --verbose` | 0；最终锁在全新 data/cache/state 下完成 7 个工具安装，重新验证 Python provenance | `final-cold-install-linux.log` |
+| `mise tasks validate`、`mise run config:check`、`mise run doctor` | 均为 0；16 个任务；实际 Python 为 3.12.16 | `tasks-validate.log`、`final-config-check.log`、`final-doctor.log` |
+| `mise run selftest` | 0；75 项治理回归通过 | `final-selftest.log` |
+| `mise run format`、`mise run check` | 均为 1；Maven 下载 Spring Boot BOM 时 DNS 解析失败 | `final-format.log`、`final-check.log` |
+| `mise exec -- python tools/offline_check.py` | 0；75 项治理测试、领域 smoke 和 Java 9 API 反例通过；仅离线验证 | `offline-check.log` |
+| 实际 Python 3.12.16 配合 `LAB_EXPECTED_PYTHON=3.12.0` 执行 doctor | 1；按预期拒绝精确补丁错配 | `negative-python-exact.log` |
+
+保留警告：mise 报告一个 attestation 验证方法因 TUF 根不可达未执行，其他 attestation 验证成功；
+冷启动日志明确输出 `GitHub artifact attestations verified`。没有关闭验签、校验和、TLS 或调整网络安全配置。
+Maven 使用项目 settings；仅通过进程级 `MAVEN_OPTS=-Dmaven.repo.local=...` 将依赖缓存放入隔离可写目录。
+
+本机 `check` 在依赖下载阶段停止，完整 Java 测试、真实检查器 fixtures 和 HTTP 为 **NOT_RUN**，不将离线测试计为完整通过。
+Windows 原生执行及该候选提交的远程 CI 在首次推送前为 **NOT_RUN**；后续以 PR 精确提交对应的检查记录为准。
+这些受保护文件变更仍需独立人类政策/验收审查；本次没有批准 review、合并或扩大例外。
+
 ## 当前：新版默认工具链
 
 用户于 2026-11-06 要求先提交实验，再将新版作为默认。实验已提交为 `daacc5b`；默认切换不使用版本 profile。

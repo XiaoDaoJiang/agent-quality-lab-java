@@ -1,9 +1,11 @@
 # Pinned vendor artifacts for Windows/Linux x64. Java checksums were verified against the sources below.
-# Python entries originate from mise-generated metadata; all checksums are enforced at install.
+# Python 3.12 resolves to an exact attested patch; all checksums are enforced at install.
+lockfile_version = 4
 
 [[tools.java]]
 version = "temurin-17.0.10+7"
 backend = "core:java"
+specifiers = ["temurin-17.0.10+7"]
 
 # Checksum source: https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.10%2B7/OpenJDK17U-jdk_x64_windows_hotspot_17.0.10_7.zip.sha256.txt
 [tools.java.platforms.windows-x64]
@@ -18,6 +20,7 @@ checksum = "sha256:a8fd07e1e97352e97e330beb20f1c6b351ba064ca7878e974c7d68b8a5c1b
 [[tools.java]]
 version = "zulu-8.94.0.17"
 backend = "core:java"
+specifiers = ["zulu-8.94.0.17"]
 
 # Checksum source: https://api.azul.com/metadata/v1/zulu/packages/e72ffb16-79eb-493d-8094-3c1a314d6084
 [tools.java.platforms.windows-x64]
@@ -32,6 +35,7 @@ checksum = "sha256:a6d14104f2e7186cba8943c4dc182938db91509dc2c0ef9ecee046c864624
 [[tools.java]]
 version = "temurin-11.0.24+8"
 backend = "core:java"
+specifiers = ["temurin-11.0.24+8"]
 
 # Checksum source: https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.24%2B8/OpenJDK11U-jdk_x64_windows_hotspot_11.0.24_8.zip.sha256.txt
 [tools.java.platforms.windows-x64]
@@ -46,6 +50,7 @@ checksum = "sha256:0e71a01563a5c7b9988a168b0c4ce720a6dff966b3c27bb29d1ded461ff71
 [[tools.java]]
 version = "zulu-21.54.109.0"
 backend = "core:java"
+specifiers = ["zulu-21.54.109.0"]
 
 # Checksum source: https://api.azul.com/metadata/v1/zulu/packages/4ee30e3a-b26a-40d3-9d04-2182eae4075e
 [tools.java.platforms.windows-x64]
@@ -60,6 +65,7 @@ checksum = "sha256:abe544103f1c4f0cc4b8997c0cac847eb1e842382eef57ce361c982fb0a3d
 [[tools.java]]
 version = "zulu-25.38.109.0"
 backend = "core:java"
+specifiers = ["zulu-25.38.109.0"]
 
 # Checksum source: https://api.azul.com/metadata/v1/zulu/packages/47a980b0-effe-4a4d-aaa3-3206176140b8
 [tools.java.platforms.windows-x64]
@@ -72,16 +78,19 @@ url = "https://cdn.azul.com/zulu/bin/zulu25.38.109-ca-jdk25.0.5.0.3-linux_x64.ta
 checksum = "sha256:bb633b566fd501911a850d604d7d3abdfee657a88f2bbacb12e5ebc34727356f"
 
 [[tools.python]]
-version = "3.12.0"
+version = "3.12.16"
 backend = "core:python"
+specifiers = ["3.12"]
 
-[tools.python.platforms.windows-x64]
-url = "https://github.com/astral-sh/python-build-standalone/releases/download/20231002/cpython-3.12.0+20231002-x86_64-pc-windows-msvc-shared-install_only.tar.gz"
-checksum = "sha256:facfaa1fbc8653f95057f3c4a0f8aa833dab0e0b316e24ee8686bc761d4b4f8d"
+[tools.python."platforms.linux-x64"]
+checksum = "sha256:ce4f6d0a6cfdb3bed6e44c2f9affd85943c76a42e25ad3a259002f31d6fb8a20"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20261026/cpython-3.12.16+20261026-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz"
+provenance = "github-attestations"
 
-[tools.python.platforms.linux-x64]
-url = "https://github.com/astral-sh/python-build-standalone/releases/download/20231002/cpython-3.12.0+20231002-x86_64-unknown-linux-gnu-install_only.tar.gz"
-checksum = "sha256:e51a5293f214053ddb4645b2c9f84542e2ef86870b8655704367bd4b29d39fe9"
+[tools.python."platforms.windows-x64"]
+checksum = "sha256:1f2ab53880fc67ea323398c6388e05af28addc99a8e389209f08a51fdff4b149"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20261026/cpython-3.12.16+20261026-x86_64-pc-windows-msvc-install_only_stripped.tar.gz"
+provenance = "github-attestations"
 
 [[tools."http:maven"]]
 version = "3.9.11"
